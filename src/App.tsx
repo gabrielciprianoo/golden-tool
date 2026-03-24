@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout, AdminLayout } from './components/templates'
 import { HeroSection, LinkList } from './components/organisms'
 import { Card } from './components/molecules'
-import { LoginPage, AdminPage } from './pages'
+import { LoginPage, AdminPage, WorkersPage, InventoryPage, ReviewsPage } from './pages'
 import type { LinkItem } from './types'
 import { getCurrentUser } from './services/authService'
 
@@ -71,6 +71,9 @@ function App() {
         }
       >
         <Route index element={<AdminPage />} />
+        <Route path="workers" element={<WorkersPage />} />
+        <Route path="inventory" element={<InventoryPage />} />
+        <Route path="reviews" element={<ReviewsPage />} />
       </Route>
     </Routes>
   )
