@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, NavLink } from 'react-router-dom'
 import { Button } from '../atoms'
-import { logout, clearAuth, getCurrentUser } from '../../services/authService'
+import { useAuthStore } from '../../stores/authStore'
 
 interface NavItem {
   path: string
@@ -10,7 +10,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: '/admin', label: 'Dashboard', icon: '📊' },
+  { path: '/admin', label: 'Panel', icon: '📊' },
   { path: '/admin/workers', label: 'Trabajadores', icon: '👷' },
   { path: '/admin/inventory', label: 'Inventario', icon: '📦' },
   { path: '/admin/reviews', label: 'Revisiones', icon: '🔧' },
@@ -18,12 +18,11 @@ const navItems: NavItem[] = [
 
 export const AdminLayout = () => {
   const navigate = useNavigate()
-  const user = getCurrentUser()
+  const { user, logout } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = async () => {
     await logout()
-    clearAuth()
     navigate('/login')
   }
 
@@ -66,7 +65,7 @@ export const AdminLayout = () => {
 
         <div className="admin-sidebar__footer">
           <Button variant="outline" size="sm" className="w-full" onClick={handleLogout}>
-            Cerrar Sesión
+            Logout
           </Button>
         </div>
       </aside>
@@ -79,14 +78,14 @@ export const AdminLayout = () => {
         <header className="admin-header">
           <div className="admin-header__left">
             <h1 className="admin-header__title">Golden Tool</h1>
-            <span className="admin-header__subtitle">Panel de Administración</span>
+            <span className="admin-header__subtitle">Panel del administrador</span>
           </div>
           <div className="admin-header__right">
             {user && (
               <span className="admin-header__user">{user.name}</span>
             )}
             <Button variant="outline" size="sm" onClick={handleLogout} className="header-logout">
-              Cerrar Sesión
+              Logout
             </Button>
           </div>
         </header>

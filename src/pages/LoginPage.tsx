@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { parse } from 'valibot'
 import { Button } from '../components/atoms'
-import { login, setAuth } from '../services/authService'
-import type { LoginCredentials } from '../types/auth'
+import { useAuthStore } from '../stores/authStore'
+import { usernameSchema, passwordSchema, type LoginFormData } from '../schemas/authSchema'
+
 
 interface FormErrors {
   username?: string
@@ -11,54 +13,46 @@ interface FormErrors {
 
 export const LoginPage = () => {
   const navigate = useNavigate()
-  const [credentials, setCredentials] = useState<LoginCredentials>({
+  const { login, isLoading, error, clearError } = useAuthStore()
+  
+  const [credentials, setCredentials] = useState<LoginFormData>({
     username: '',
     password: ''
   })
   const [errors, setErrors] = useState<FormErrors>({})
-  const [isLoading, setIsLoading] = useState(false)
-  const [serverError, setServerError] = useState('')
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
 
-    if (!credentials.username.trim()) {
-      newErrors.username = 'El usuario es requerido'
+    try {
+      parse(usernameSchema, credentials.username)
+    } catch (e) {
+      newErrors.username = (e as Error).message
     }
 
-    if (!credentials.password) {
-      newErrors.password = 'La contraseña es requerida'
+    try {
+      parse(passwordSchema, credentials.password)
+    } catch (e) {
+      newErrors.password = (e as Error).message
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setServerError('')
+    clearError()
 
     if (!validate()) return
 
-    setIsLoading(true)
-
-    try {
-      const response = await login(credentials)
-
-      if (response.success && response.user && response.token) {
-        setAuth(response.user, response.token)
-        navigate('/admin')
-      } else {
-        setServerError(response.error || 'Error al iniciar sesión')
-      }
-    } catch {
-      setServerError('Error de conexión. Intenta más tarde.')
-    } finally {
-      setIsLoading(false)
+    const success = await login(credentials)
+    if (success) {
+      navigate('/admin')
     }
   }
 
-  const handleChange = (field: keyof LoginCredentials) => (
+  const handleChange = (field: keyof LoginFormData) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setCredentials(prev => ({ ...prev, [field]: e.target.value }))
@@ -85,12 +79,12 @@ export const LoginPage = () => {
             Golden Tool
           </h1>
           <p style={{ color: 'var(--text)' }}>
-            Ingresa tus credenciales para continuar
+            Introduce tus credenciales para continuar.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {serverError && (
+          {error && (
             <div 
               className="p-3 rounded-lg text-sm"
               style={{ 
@@ -99,7 +93,7 @@ export const LoginPage = () => {
                 border: '1px solid var(--danger-200)'
               }}
             >
-              {serverError}
+              {error}
             </div>
           )}
 
@@ -109,7 +103,7 @@ export const LoginPage = () => {
               className="block text-sm font-medium mb-2"
               style={{ color: 'var(--text-h)' }}
             >
-              Usuario
+              Username
             </label>
             <input
               id="username"
@@ -138,7 +132,7 @@ export const LoginPage = () => {
               className="block text-sm font-medium mb-2"
               style={{ color: 'var(--text-h)' }}
             >
-              Contraseña
+              Password
             </label>
             <input
               id="password"
@@ -167,7 +161,7 @@ export const LoginPage = () => {
             className="w-full"
             isLoading={isLoading}
           >
-            Iniciar Sesión
+            Sign In
           </Button>
         </form>
 
@@ -179,8 +173,8 @@ export const LoginPage = () => {
           }}
         >
           <p style={{ color: 'var(--text)' }}>
-            <strong>Usuario de prueba:</strong> admin<br />
-            <strong>Contraseña:</strong> password123
+            <strong>Test user:</strong> admin<br />
+            <strong>Password:</strong> password123
           </p>
         </div>
       </div>
