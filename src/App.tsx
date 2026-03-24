@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { MainLayout } from './components/templates'
+import { MainLayout, AdminLayout } from './components/templates'
 import { HeroSection, LinkList } from './components/organisms'
 import { Card } from './components/molecules'
-import { LoginPage } from './pages'
+import { LoginPage, AdminPage } from './pages'
 import type { LinkItem } from './types'
 import { getCurrentUser } from './services/authService'
 
@@ -62,6 +62,16 @@ function App() {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminPage />} />
+      </Route>
     </Routes>
   )
 }

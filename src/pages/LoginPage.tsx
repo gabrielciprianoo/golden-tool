@@ -47,7 +47,7 @@ export const LoginPage = () => {
 
       if (response.success && response.user && response.token) {
         setAuth(response.user, response.token)
-        navigate('/')
+        navigate('/admin')
       } else {
         setServerError(response.error || 'Error al iniciar sesión')
       }
