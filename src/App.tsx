@@ -1,7 +1,12 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout } from './components/templates'
 import { HeroSection, LinkList } from './components/organisms'
 import { Card } from './components/molecules'
+import { LoginPage } from './pages'
 import type { LinkItem } from './types'
+import { getCurrentUser } from './services/authService'
+
+const isAuthenticated = () => !!getCurrentUser()
 
 const documentationLinks: LinkItem[] = [
   { href: 'https://vite.dev/', label: 'Explore Vite', icon: 'vite', external: true },
@@ -15,7 +20,7 @@ const socialLinks: LinkItem[] = [
   { href: 'https://bsky.app/profile/vite.dev', label: 'Bluesky', icon: 'bluesky', external: true },
 ]
 
-function App() {
+const HomePage = () => {
   return (
     <MainLayout>
       <HeroSection />
@@ -35,6 +40,29 @@ function App() {
       <div className="ticks" />
       <section id="spacer" />
     </MainLayout>
+  )
+}
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+  return <>{children}</>
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        } 
+      />
+    </Routes>
   )
 }
 
