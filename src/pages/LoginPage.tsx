@@ -164,19 +164,6 @@ export const LoginPage = () => {
             Sign In
           </Button>
         </form>
-
-        <div 
-          className="mt-6 p-3 rounded-lg text-sm"
-          style={{ 
-            background: 'var(--accent-bg)', 
-            border: '1px solid var(--accent-border)'
-          }}
-        >
-          <p style={{ color: 'var(--text)' }}>
-            <strong>Test user:</strong> admin<br />
-            <strong>Password:</strong> password123
-          </p>
-        </div>
       </div>
     </div>
   )

@@ -1,33 +1,45 @@
 import type { LoginCredentials, AuthResponse, User } from '../types/auth'
-
-const MOCK_USER: User = {
-  id: '1',
-  username: 'admin',
-  email: 'admin@goldentool.com',
-  name: 'Administrador'
-}
-
-const MOCK_TOKEN = 'mock-jwt-token-123456789'
+import { post, get } from './apiClient'
 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  await new Promise(resolve => setTimeout(resolve, 500))
-
-  if (credentials.username === 'admin' && credentials.password === 'password123') {
+  const response = await post<{ user: User; token: string }>('/api/login', credentials)
+  
+  if (response.success && response.data) {
     return {
       success: true,
-      user: MOCK_USER,
-      token: MOCK_TOKEN
+      user: response.data.user,
+      token: response.data.token
     }
   }
 
+  const errorMessage = 'error' in response ? response.error : 'Usuario o contraseña incorrectos'
   return {
     success: false,
-    error: 'Usuario o contraseña incorrectos'
+    error: errorMessage
   }
 }
 
 export const logout = async (): Promise<void> => {
-  await new Promise(resolve => setTimeout(resolve, 200))
+  await post('/logout')
+}
+
+export const getCurrentUserFromApi = async (): Promise<AuthResponse> => {
+  const response = await get<{ user: User }>('/me')
+  
+  if (response.success && response.data) {
+    const token = localStorage.getItem('auth_token')
+    return {
+      success: true,
+      user: response.data.user,
+      token: token || undefined
+    }
+  }
+
+  const errorMessage = 'error' in response ? response.error : 'No se pudo obtener el usuario'
+  return {
+    success: false,
+    error: errorMessage
+  }
 }
 
 export const getCurrentUser = (): User | null => {
@@ -35,7 +47,11 @@ export const getCurrentUser = (): User | null => {
   const user = localStorage.getItem('auth_user')
   
   if (token && user) {
-    return JSON.parse(user)
+    try {
+      return JSON.parse(user)
+    } catch {
+      return null
+    }
   }
   return null
 }
