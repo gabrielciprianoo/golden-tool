@@ -1,25 +1,24 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User } from '../types/auth'
-import { login as authLogin, logout as authLogout, clearAuth } from '../services/authService'
+import { login as authLogin, logout as authLogout, getCurrentUserFromApi } from '../services/authService'
 import type { LoginCredentials } from '../types/auth'
 
 interface AuthState {
   user: User | null
-  token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
   login: (credentials: LoginCredentials) => Promise<boolean>
   logout: () => Promise<void>
+  verifyAuth: () => Promise<void>
   clearError: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
-      token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -28,24 +27,23 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
         try {
           const response = await authLogin(credentials)
-          if (response.success && response.user && response.token) {
+          if (response.success && response.user) {
             set({
               user: response.user,
-              token: response.token,
               isAuthenticated: true,
               isLoading: false,
             })
             return true
           } else {
             set({
-              error: response.error || 'Invalid credentials',
+              error: response.error || 'Credenciales incorrectas',
               isLoading: false,
             })
             return false
           }
         } catch {
           set({
-            error: 'Connection error. Please try again later.',
+            error: 'Error de conexión. Intenta de nuevo.',
             isLoading: false,
           })
           return false
@@ -54,20 +52,28 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         await authLogout()
-        clearAuth()
         set({
           user: null,
-          token: null,
           isAuthenticated: false,
           error: null,
         })
+      },
+
+      verifyAuth: async () => {
+        if (!get().isAuthenticated) return
+        const response = await getCurrentUserFromApi()
+        if (response.success && response.user) {
+          set({ user: response.user })
+        } else {
+          set({ user: null, isAuthenticated: false })
+        }
       },
 
       clearError: () => set({ error: null }),
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 )
