@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout, AdminLayout } from './components/templates'
 import { HeroSection } from './components/organisms'
@@ -14,6 +15,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 }
 
 function App() {
+  const verifyAuth = useAuthStore((state) => state.verifyAuth)
+
+  useEffect(() => {
+    verifyAuth()
+  }, [])
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

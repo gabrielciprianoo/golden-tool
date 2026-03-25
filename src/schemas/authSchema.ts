@@ -1,15 +1,16 @@
-import { pipe, string, minLength, maxLength } from 'valibot'
+import { pipe, string, minLength, maxLength, email } from 'valibot'
 
-export const usernameSchema = pipe(
+export const emailSchema = pipe(
   string(),
-  minLength(1, 'Username is required'),
-  maxLength(50, 'Username must be less than 50 characters')
+  minLength(1, 'El email es obligatorio'),
+  maxLength(100, 'El email es demasiado largo'),
+  email('Email inválido')
 )
 
 export const passwordSchema = pipe(
   string(),
-  minLength(1, 'Password is required'),
-  minLength(6, 'Password must be at least 6 characters')
+  minLength(1, 'La contraseña es obligatoria'),
+  minLength(6, 'La contraseña debe tener al menos 6 caracteres')
 )
 
-export type LoginFormData = { username: string; password: string }
+export type LoginFormData = { email: string; password: string }
