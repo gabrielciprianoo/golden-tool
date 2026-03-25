@@ -1,7 +1,7 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import type { ApiError, ApiResult, RequestConfig } from '../types/api'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -81,13 +81,19 @@ export async function del<T>(url: string, config?: RequestConfig): Promise<ApiRe
 
 function handleError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
+    console.log('ERROR COMPLETO:', error.response?.data) // 👈 AGREGA ESTO
+
     const statusCode = error.response?.status || 500
-    const message = error.response?.data?.error || error.message || 'Error de conexión'
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      'Error de conexión'
+
     return {
       success: false,
       error: message,
       statusCode,
-      details: error.response?.data?.details,
+      details: error.response?.data,
     }
   }
   return {

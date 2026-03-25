@@ -3,12 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { parse } from 'valibot'
 import { Button } from '../components/atoms'
 import { useAuthStore } from '../stores/authStore'
-import { usernameSchema, passwordSchema, type LoginFormData } from '../schemas/authSchema'
-
+import { passwordSchema } from '../schemas/authSchema'
 
 interface FormErrors {
-  username?: string
+  email?: string
   password?: string
+}
+
+interface LoginFormData {
+  email: string
+  password: string
 }
 
 export const LoginPage = () => {
@@ -16,18 +20,19 @@ export const LoginPage = () => {
   const { login, isLoading, error, clearError } = useAuthStore()
   
   const [credentials, setCredentials] = useState<LoginFormData>({
-    username: '',
+    email: '',
     password: ''
   })
+
   const [errors, setErrors] = useState<FormErrors>({})
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
 
-    try {
-      parse(usernameSchema, credentials.username)
-    } catch (e) {
-      newErrors.username = (e as Error).message
+    if (!credentials.email) {
+      newErrors.email = 'El email es obligatorio'
+    } else if (!/\S+@\S+\.\S+/.test(credentials.email)) {
+      newErrors.email = 'Email inválido'
     }
 
     try {
@@ -97,35 +102,37 @@ export const LoginPage = () => {
             </div>
           )}
 
+          {/* EMAIL */}
           <div>
             <label 
-              htmlFor="username" 
+              htmlFor="email" 
               className="block text-sm font-medium mb-2"
               style={{ color: 'var(--text-h)' }}
             >
-              Username
+              Email
             </label>
             <input
-              id="username"
-              type="text"
-              value={credentials.username}
-              onChange={handleChange('username')}
+              id="email"
+              type="email"
+              value={credentials.email}
+              onChange={handleChange('email')}
               className="w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2"
               style={{ 
                 background: 'var(--bg)',
-                borderColor: errors.username ? 'var(--danger-500)' : 'var(--border)',
+                borderColor: errors.email ? 'var(--danger-500)' : 'var(--border)',
                 color: 'var(--text-h)',
                 '--tw-ring-color': 'var(--accent-border)'
               } as React.CSSProperties}
-              placeholder="admin"
+              placeholder="correo@ejemplo.com"
             />
-            {errors.username && (
+            {errors.email && (
               <p className="mt-1 text-sm" style={{ color: 'var(--danger-600)' }}>
-                {errors.username}
+                {errors.email}
               </p>
             )}
           </div>
 
+          {/* PASSWORD */}
           <div>
             <label 
               htmlFor="password" 
