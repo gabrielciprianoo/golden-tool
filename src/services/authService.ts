@@ -1,6 +1,22 @@
 import type { LoginCredentials, AuthResponse, User } from '../types/auth'
 import { post, get } from './apiClient'
 
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+  return null
+}
+
+function setCookie(name: string, value: string, days?: number): void {
+  const expires = days ? `; expires=${new Date(Date.now() + days * 864e5).toUTCString()}` : ''
+  document.cookie = `${name}=${value}${expires}; path=/`
+}
+
+function deleteCookie(name: string): void {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`
+}
+
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   const response = await post<{ user: User; token: string }>('api/login', credentials)
   
@@ -27,7 +43,7 @@ export const getCurrentUserFromApi = async (): Promise<AuthResponse> => {
   const response = await get<{ user: User }>('/me')
   
   if (response.success && response.data) {
-    const token = localStorage.getItem('auth_token')
+    const token = getCookie('auth_token')
     return {
       success: true,
       user: response.data.user,
@@ -43,8 +59,8 @@ export const getCurrentUserFromApi = async (): Promise<AuthResponse> => {
 }
 
 export const getCurrentUser = (): User | null => {
-  const token = localStorage.getItem('auth_token')
-  const user = localStorage.getItem('auth_user')
+  const token = getCookie('auth_token')
+  const user = getCookie('auth_user')
   
   if (token && user) {
     try {
@@ -57,11 +73,11 @@ export const getCurrentUser = (): User | null => {
 }
 
 export const setAuth = (user: User, token: string): void => {
-  localStorage.setItem('auth_token', token)
-  localStorage.setItem('auth_user', JSON.stringify(user))
+  setCookie('auth_token', token)
+  setCookie('auth_user', JSON.stringify(user))
 }
 
 export const clearAuth = (): void => {
-  localStorage.removeItem('auth_token')
-  localStorage.removeItem('auth_user')
+  deleteCookie('auth_token')
+  deleteCookie('auth_user')
 }

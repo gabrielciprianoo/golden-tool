@@ -3,17 +3,29 @@ import type { ApiError, ApiResult, RequestConfig } from '../types/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
 
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+  return null
+}
+
+function deleteCookie(name: string): void {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`
+}
+
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 })
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('auth_token')
+    const token = getCookie('auth_token')
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -26,8 +38,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('auth_user')
+      deleteCookie('auth_token')
+      deleteCookie('auth_user')
       window.location.href = '/login'
     }
     return Promise.reject(error)
