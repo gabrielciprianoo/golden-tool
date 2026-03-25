@@ -1,5 +1,5 @@
 export interface LoginCredentials {
-  username: string
+  email: string
   password: string
 }
 
@@ -13,6 +13,5 @@ export interface User {
 export interface AuthResponse {
   success: boolean
   user?: User
-  token?: string
   error?: string
 }

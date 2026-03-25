@@ -34,3 +34,14 @@ export interface LinkListProps {
   icon?: string
   links: LinkItem[]
 }
+
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  error?: boolean
+}
+
+export interface FormFieldProps {
+  label: string
+  htmlFor: string
+  error?: string
+  children: React.ReactNode
+}
