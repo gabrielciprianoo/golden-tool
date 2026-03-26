@@ -1,4 +1,4 @@
-import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, type AxiosInstance } from 'axios'
 import type { ApiError, ApiResult, RequestConfig } from '../types/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -9,20 +9,48 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: false, // 🔥 sin cookies
 })
 
+/*
+|--------------------------------------------------------------------------
+| 🔐 REQUEST INTERCEPTOR (AQUÍ VA EL TOKEN)
+|--------------------------------------------------------------------------
+*/
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+
+  if (token) {
+    config.headers = {
+      ...config.headers,
+      Authorization: `Bearer ${token}`,
+    }
+  }
+
+  return config
+})
+
+/*
+|--------------------------------------------------------------------------
+| RESPONSE INTERCEPTOR
+|--------------------------------------------------------------------------
+*/
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth-storage')
+      localStorage.removeItem('token')
       window.location.href = '/login'
     }
     return Promise.reject(error)
   }
 )
 
+/*
+|--------------------------------------------------------------------------
+| GET
+|--------------------------------------------------------------------------
+*/
 export async function get<T>(url: string, config?: RequestConfig): Promise<ApiResult<T>> {
   try {
     const response = await apiClient.get<T>(url, config)
@@ -32,6 +60,11 @@ export async function get<T>(url: string, config?: RequestConfig): Promise<ApiRe
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| POST
+|--------------------------------------------------------------------------
+*/
 export async function post<T>(url: string, data?: unknown, config?: RequestConfig): Promise<ApiResult<T>> {
   try {
     const response = await apiClient.post<T>(url, data, config)
@@ -41,6 +74,11 @@ export async function post<T>(url: string, data?: unknown, config?: RequestConfi
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| PUT
+|--------------------------------------------------------------------------
+*/
 export async function put<T>(url: string, data?: unknown, config?: RequestConfig): Promise<ApiResult<T>> {
   try {
     const response = await apiClient.put<T>(url, data, config)
@@ -50,6 +88,11 @@ export async function put<T>(url: string, data?: unknown, config?: RequestConfig
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| PATCH
+|--------------------------------------------------------------------------
+*/
 export async function patch<T>(url: string, data?: unknown, config?: RequestConfig): Promise<ApiResult<T>> {
   try {
     const response = await apiClient.patch<T>(url, data, config)
@@ -59,6 +102,11 @@ export async function patch<T>(url: string, data?: unknown, config?: RequestConf
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| DELETE
+|--------------------------------------------------------------------------
+*/
 export async function del<T>(url: string, config?: RequestConfig): Promise<ApiResult<T>> {
   try {
     const response = await apiClient.delete<T>(url, config)
@@ -68,21 +116,21 @@ export async function del<T>(url: string, config?: RequestConfig): Promise<ApiRe
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| ERROR HANDLER
+|--------------------------------------------------------------------------
+*/
 function handleError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
-    const statusCode = error.response?.status || 500
-    const message =
-      error.response?.data?.message ||
-      error.message ||
-      'Error de conexión'
-
     return {
       success: false,
-      error: message,
-      statusCode,
+      error: error.response?.data?.message || error.message || 'Error de conexión',
+      statusCode: error.response?.status || 500,
       details: error.response?.data,
     }
   }
+
   return {
     success: false,
     error: 'Error desconocido',

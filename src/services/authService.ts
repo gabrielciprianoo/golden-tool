@@ -11,10 +11,9 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     }
   }
 
-  const errorMessage = 'error' in response ? response.error : 'Usuario o contraseña incorrectos'
   return {
     success: false,
-    error: errorMessage,
+    error: 'Usuario o contraseña incorrectos',
   }
 }
 
@@ -32,9 +31,8 @@ export const getCurrentUserFromApi = async (): Promise<AuthResponse> => {
     }
   }
 
-  const errorMessage = 'error' in response ? response.error : 'No se pudo obtener el usuario'
   return {
     success: false,
-    error: errorMessage,
+    error: 'No se pudo obtener el usuario',
   }
 }
