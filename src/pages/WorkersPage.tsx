@@ -1,191 +1,363 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useForm } from 'react-hook-form'
 import { Button, Input, Select } from '../components/atoms'
+import { Modal, ToastContainer } from '../components/organisms'
 import { FormField } from '../components/molecules'
 import { useWorkersStore } from '../stores/workersStore'
-import { WORKER_AREAS, type WorkerArea, type CreateWorkerInput } from '../types/worker'
+import { useToastStore } from '../stores/toastStore'
+import { WORKER_AREAS, type WorkerArea, type CreateWorkerInput, type Worker } from '../types/worker'
+import { validateField, workerValidationRules } from '../schemas/workerSchema'
 
-interface FormErrors {
-  name?: string
-  lastName?: string
-  area?: string
+const IconSearch = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+)
+
+const IconEdit = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+)
+
+const IconTrash = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+)
+
+const IconUser = () => (
+  <svg className="w-16 h-16 text-[var(--text)] opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+)
+
+type WorkerFormValues = {
+  name: string
+  lastName: string
+  area: WorkerArea | ''
 }
 
 export const WorkersPage = () => {
-  const { workers, isLoading, addWorker, deleteWorker, getNextCode } = useWorkersStore()
-  const [code, setCode] = useState('')
-  const [name, setName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [area, setArea] = useState<WorkerArea | ''>('')
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [successMessage, setSuccessMessage] = useState('')
+  const { workers, isLoading, addWorker, updateWorker, deleteWorker, getNextCode, searchTerm, filterArea, setSearchTerm, setFilterArea } = useWorkersStore()
+  const { addToast } = useToastStore()
+  
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
+  const [searchInput, setSearchInput] = useState(searchTerm)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<WorkerFormValues>()
+
+  const filteredWorkers = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim()
+    return workers.filter((worker) => {
+      const matchesSearch = !term || 
+        worker.name.toLowerCase().includes(term) ||
+        worker.lastName.toLowerCase().includes(term) ||
+        worker.code.toLowerCase().includes(term)
+      const matchesArea = !filterArea || worker.area === filterArea
+      return matchesSearch && matchesArea
+    })
+  }, [workers, searchTerm, filterArea])
 
   useEffect(() => {
-    setCode(getNextCode())
-  }, [workers, getNextCode])
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput, setSearchTerm])
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (!name.trim()) {
-      newErrors.name = 'El nombre es requerido'
-    } else if (name.trim().length < 2) {
-      newErrors.name = 'El nombre debe tener al menos 2 caracteres'
+  const handleOpenModal = (worker?: Worker) => {
+    if (worker) {
+      setEditingWorker(worker)
+      setValue('name', worker.name)
+      setValue('lastName', worker.lastName)
+      setValue('area', worker.area)
+    } else {
+      setEditingWorker(null)
+      reset({
+        name: '',
+        lastName: '',
+        area: '' as WorkerArea | '',
+      })
     }
-
-    if (!lastName.trim()) {
-      newErrors.lastName = 'Los apellidos son requeridos'
-    } else if (lastName.trim().length < 2) {
-      newErrors.lastName = 'Los apellidos deben tener al menos 2 caracteres'
-    }
-
-    if (!area) {
-      newErrors.area = 'Selecciona un área'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    setIsModalOpen(true)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSuccessMessage('')
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setEditingWorker(null)
+    reset()
+  }
 
-    if (!validateForm()) return
-
-    const input: CreateWorkerInput = {
-      name: name.trim(),
-      lastName: lastName.trim(),
-      area: area as WorkerArea,
+  const onSubmit = async (data: WorkerFormValues) => {
+    if (!data.area) {
+      addToast('Selecciona un área', 'error')
+      return
     }
 
-    const success = await addWorker(input)
+    const input: CreateWorkerInput = {
+      name: data.name.trim(),
+      lastName: data.lastName.trim(),
+      area: data.area,
+    }
+
+    let success: boolean
+
+    if (editingWorker) {
+      success = await updateWorker(editingWorker.id, input)
+      if (success) {
+        addToast('Trabajador actualizado correctamente', 'success')
+      }
+    } else {
+      success = await addWorker(input)
+      if (success) {
+        addToast('Trabajador registrado correctamente', 'success')
+        reset()
+      }
+    }
 
     if (success) {
-      setSuccessMessage('Trabajador registrado correctamente')
-      setName('')
-      setLastName('')
-      setArea('')
-      setTimeout(() => setSuccessMessage(''), 3000)
+      handleCloseModal()
+    } else {
+      addToast('Error al guardar trabajador', 'error')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar este trabajador?')) {
-      await deleteWorker(id)
+    const worker = workers.find((w) => w.id === id)
+    if (confirm(`¿Estás seguro de eliminar al trabajador ${worker?.name} ${worker?.lastName}?`)) {
+      const success = await deleteWorker(id)
+      if (success) {
+        addToast('Trabajador eliminado correctamente', 'success')
+      } else {
+        addToast('Error al eliminar trabajador', 'error')
+      }
     }
   }
 
-  const areaOptions = WORKER_AREAS.map((a) => ({ value: a.value, label: a.label }))
+  const handleClearFilters = () => {
+    setSearchInput('')
+    setSearchTerm('')
+    setFilterArea('')
+  }
+
+  const hasFilters = searchTerm || filterArea
+
+  const areaOptions = [
+    { value: '', label: 'Todas las áreas' },
+    ...WORKER_AREAS.map((a) => ({ value: a.value, label: a.label })),
+  ]
 
   return (
     <div className="admin-module">
+      <ToastContainer />
+
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-[var(--text-h)] mb-2">Registrar Trabajador</h2>
-        <p className="text-[var(--text)] text-sm">Completa los datos del nuevo trabajador</p>
+        <h2 className="text-2xl font-bold text-[var(--text-h)] mb-2">Trabajadores</h2>
+        <p className="text-[var(--text)] text-sm">Gestiona los trabajadores registrados</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField label="Código de Trabajador" htmlFor="code">
-            <Input
-              id="code"
-              value={code}
-              readOnly
-              className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] cursor-not-allowed"
-            />
-          </FormField>
+      <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-[var(--text-h)] mb-1.5">
+              Buscar trabajador
+            </label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text)]">
+                <IconSearch />
+              </div>
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Buscar por nombre o código..."
+                className="w-full pl-10 pr-4 py-3 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--text-h)] placeholder:text-[var(--text)] focus:outline-none focus:ring-2 focus:border-primary-500 focus:ring-primary-500/20 transition-all"
+              />
+            </div>
+          </div>
 
-          <FormField label="Área" htmlFor="area" error={errors.area}>
+          <div className="w-full md:w-64">
             <Select
-              id="area"
-              name="area"
+              label="Filtrar por área"
               options={areaOptions}
-              value={area}
-              onChange={(e) => setArea(e.target.value as WorkerArea)}
-              required
-              error={!!errors.area}
+              value={filterArea}
+              onChange={(e) => setFilterArea(e.target.value as WorkerArea | '')}
             />
-          </FormField>
+          </div>
 
-          <FormField label="Nombre" htmlFor="name" error={errors.name}>
-            <Input
-              id="name"
-              name="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ingresa el nombre"
-              required
-              error={!!errors.name}
-            />
-          </FormField>
+          {(searchTerm || filterArea) && (
+            <Button variant="ghost" size="md" onClick={handleClearFilters}>
+              Limpiar filtros
+            </Button>
+          )}
 
-          <FormField label="Apellidos" htmlFor="lastName" error={errors.lastName}>
-            <Input
-              id="lastName"
-              name="lastName"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Ingresa los apellidos"
-              required
-              error={!!errors.lastName}
-            />
-          </FormField>
-        </div>
-
-        <div className="mt-6 flex items-center gap-4">
-          <Button type="submit" isLoading={isLoading}>
-            Registrar Trabajador
+          <Button onClick={() => handleOpenModal()}>
+            + Nuevo Trabajador
           </Button>
-          {successMessage && (
-            <span className="text-success-600 text-sm font-medium">{successMessage}</span>
+        </div>
+      </div>
+
+      {filteredWorkers.length === 0 ? (
+        <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-12 text-center">
+          <div className="flex justify-center mb-4">
+            <IconUser />
+          </div>
+          {hasFilters ? (
+            <>
+              <h3 className="text-lg font-semibold text-[var(--text-h)] mb-2">
+                No se encontraron resultados
+              </h3>
+              <p className="text-[var(--text)] text-sm mb-4">
+                Intenta con otros filtros o términos de búsqueda
+              </p>
+              <Button variant="outline" onClick={handleClearFilters}>
+                Limpiar filtros
+              </Button>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-semibold text-[var(--text-h)] mb-2">
+                No hay trabajadores registrados
+              </h3>
+              <p className="text-[var(--text)] text-sm mb-4">
+                Comienza agregando el primer trabajador
+              </p>
+              <Button onClick={() => handleOpenModal()}>
+                + Registrar Trabajador
+              </Button>
+            </>
           )}
         </div>
-      </form>
-
-      {workers.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-[var(--text-h)] mb-4">
-            Trabajadores Registrados ({workers.length})
-          </h3>
+      ) : (
+        <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full border border-[var(--border)] rounded-lg overflow-hidden">
-              <thead className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)]">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-semibold text-[var(--text-h)]">Código</th>
-                  <th className="text-left px-4 py-3 text-sm font-semibold text-[var(--text-h)]">Nombre</th>
-                  <th className="text-left px-4 py-3 text-sm font-semibold text-[var(--text-h)]">Apellidos</th>
-                  <th className="text-left px-4 py-3 text-sm font-semibold text-[var(--text-h)]">Área</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-[var(--text-h)]">Acciones</th>
+            <table className="w-full">
+              <thead>
+                <tr className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] border-b border-[var(--border)]">
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-h)]">Código</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-h)]">Nombre</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-h)]">Apellidos</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-h)]">Área</th>
+                  <th className="text-right px-6 py-4 text-sm font-semibold text-[var(--text-h)]">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {workers.map((worker) => (
-                  <tr key={worker.id} className="border-t border-[var(--border)] hover:bg-[var(--accent-bg)]">
-                    <td className="px-4 py-3 text-sm text-[var(--text-h)] font-medium">{worker.code}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--text)]">{worker.name}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--text)]">{worker.lastName}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--text)]">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                {filteredWorkers.map((worker) => (
+                  <tr key={worker.id} className="border-b border-[var(--border)] hover:bg-[var(--accent-bg)] transition-colors">
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                        {worker.code}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-[var(--text-h)]">{worker.name}</td>
+                    <td className="px-6 py-4 text-sm text-[var(--text)]">{worker.lastName}</td>
+                    <td className="px-6 py-4 text-sm text-[var(--text)]">
+                      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-surface-100 text-surface-700 dark:bg-surface-700 dark:text-surface-200">
                         {worker.area === 'montaje/desmontaje' ? 'Montaje/Desmontaje' : 'Armado/Desarmado'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(worker.id)}
-                        className="text-danger-500 hover:text-danger-600"
-                      >
-                        Eliminar
-                      </Button>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenModal(worker)}
+                          className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
+                          title="Editar"
+                        >
+                          <IconEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(worker.id)}
+                          className="p-2 rounded-lg text-[var(--text)] hover:bg-danger-50 hover:text-danger-600 dark:hover:bg-danger-900/20 transition-colors"
+                          title="Eliminar"
+                        >
+                          <IconTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <div className="px-6 py-4 border-t border-[var(--border)] bg-[var(--surface-50)] dark:bg-[var(--surface-800)]">
+            <p className="text-sm text-[var(--text)]">
+              Mostrando <span className="font-medium text-[var(--text-h)]">{filteredWorkers.length}</span> de{' '}
+              <span className="font-medium text-[var(--text-h)]">{workers.length}</span> trabajadores
+            </p>
+          </div>
         </div>
       )}
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={editingWorker ? 'Editar Trabajador' : 'Nuevo Trabajador'}
+        footer={
+          <>
+            <Button variant="outline" onClick={handleCloseModal}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+              {editingWorker ? 'Guardar cambios' : 'Registrar'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {!editingWorker && (
+            <FormField label="Código de Trabajador" htmlFor="code">
+              <Input
+                id="code"
+                value={getNextCode()}
+                readOnly
+                className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] cursor-not-allowed"
+              />
+            </FormField>
+          )}
+
+          <FormField label="Nombre" htmlFor="name" error={errors.name?.message}>
+            <Input
+              id="name"
+              placeholder="Ingresa el nombre"
+              {...register('name', {
+                validate: (value) => validateField('name', value),
+              })}
+            />
+          </FormField>
+
+          <FormField label="Apellidos" htmlFor="lastName" error={errors.lastName?.message}>
+            <Input
+              id="lastName"
+              placeholder="Ingresa los apellidos"
+              {...register('lastName', {
+                validate: (value) => validateField('lastName', value),
+              })}
+            />
+          </FormField>
+
+          <FormField label="Área" htmlFor="area" error={errors.area?.message}>
+            <Select
+              id="area"
+              options={WORKER_AREAS.map((a) => ({ value: a.value, label: a.label }))}
+              {...register('area', {
+                required: workerValidationRules.area.required,
+              })}
+            />
+          </FormField>
+        </form>
+      </Modal>
     </div>
   )
 }

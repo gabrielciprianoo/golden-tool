@@ -1,15 +1,22 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Worker, CreateWorkerInput } from '../types/worker'
+import type { Worker, CreateWorkerInput, WorkerArea } from '../types/worker'
 
 interface WorkersState {
   workers: Worker[]
   isLoading: boolean
   error: string | null
+  searchTerm: string
+  filterArea: WorkerArea | ''
   fetchWorkers: () => Promise<void>
   addWorker: (data: CreateWorkerInput) => Promise<boolean>
+  updateWorker: (id: string, data: CreateWorkerInput) => Promise<boolean>
   deleteWorker: (id: string) => Promise<boolean>
   getNextCode: () => string
+  setSearchTerm: (term: string) => void
+  setFilterArea: (area: WorkerArea | '') => void
+  getFilteredWorkers: () => Worker[]
+  clearFilters: () => void
 }
 
 const generateCode = (count: number): string => {
@@ -23,19 +30,39 @@ export const useWorkersStore = create<WorkersState>()(
       workers: [],
       isLoading: false,
       error: null,
+      searchTerm: '',
+      filterArea: '',
 
       getNextCode: () => {
         const count = get().workers.length
         return generateCode(count)
       },
 
+      setSearchTerm: (term: string) => set({ searchTerm: term }),
+      
+      setFilterArea: (area: WorkerArea | '') => set({ filterArea: area }),
+
+      clearFilters: () => set({ searchTerm: '', filterArea: '' }),
+
+      getFilteredWorkers: () => {
+        const { workers, searchTerm, filterArea } = get()
+        const term = searchTerm.toLowerCase().trim()
+
+        return workers.filter((worker) => {
+          const matchesSearch = !term || 
+            worker.name.toLowerCase().includes(term) ||
+            worker.lastName.toLowerCase().includes(term) ||
+            worker.code.toLowerCase().includes(term)
+
+          const matchesArea = !filterArea || worker.area === filterArea
+
+          return matchesSearch && matchesArea
+        })
+      },
+
       fetchWorkers: async () => {
         set({ isLoading: true, error: null })
         try {
-          // Simular llamada API (pendiente de backend)
-          // const response = await workerService.getAll()
-          // if (response.success) set({ workers: response.data })
-          
           set({ isLoading: false })
         } catch {
           set({ error: 'Error al cargar trabajadores', isLoading: false })
@@ -45,10 +72,6 @@ export const useWorkersStore = create<WorkersState>()(
       addWorker: async (data: CreateWorkerInput) => {
         set({ isLoading: true, error: null })
         try {
-          // Simular llamada API (pendiente de backend)
-          // const response = await workerService.create(data)
-          // if (response.success) { ... }
-
           const workers = get().workers
           const newWorker: Worker = {
             id: crypto.randomUUID(),
@@ -67,12 +90,25 @@ export const useWorkersStore = create<WorkersState>()(
         }
       },
 
+      updateWorker: async (id: string, data: CreateWorkerInput) => {
+        set({ isLoading: true, error: null })
+        try {
+          const workers = get().workers.map((w) =>
+            w.id === id
+              ? { ...w, name: data.name, lastName: data.lastName, area: data.area }
+              : w
+          )
+          set({ workers, isLoading: false })
+          return true
+        } catch {
+          set({ error: 'Error al actualizar trabajador', isLoading: false })
+          return false
+        }
+      },
+
       deleteWorker: async (id: string) => {
         set({ isLoading: true, error: null })
         try {
-          // Simular llamada API (pendiente de backend)
-          // await workerService.delete(id)
-
           const workers = get().workers.filter((w) => w.id !== id)
           set({ workers, isLoading: false })
           return true
