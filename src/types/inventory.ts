@@ -101,6 +101,8 @@ export interface InventoryStats {
 
 export type ToolCategory = 'normal' | 'refaccion'
 
+export type ToolStatus = 'active' | 'inactive'
+
 export interface Tool {
   id: string
   name: string
@@ -110,6 +112,7 @@ export interface Tool {
   entryDate: string
   quantity: number
   unassignedQuantity: number
+  status: ToolStatus
 }
 
 export interface ToolInput {
@@ -119,4 +122,5 @@ export interface ToolInput {
   supplier?: string
   quantity: number
   unassignedQuantity: number
+  status?: ToolStatus
 }

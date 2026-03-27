@@ -6,6 +6,7 @@ const variantStyles: Record<string, string> = {
   secondary: 'bg-surface-100 text-surface-700 hover:bg-surface-200 focus:ring-surface-400 dark:bg-surface-800 dark:text-surface-200 dark:hover:bg-surface-700',
   outline: 'border-2 border-primary-500 text-primary-600 hover:bg-primary-50 focus:ring-primary-500 dark:border-primary-400 dark:text-primary-400 dark:hover:bg-primary-950/20',
   ghost: 'text-surface-600 hover:bg-surface-100 focus:ring-surface-400 dark:text-surface-300 dark:hover:bg-surface-800',
+  danger: 'bg-danger-500 text-white hover:bg-danger-600 focus:ring-danger-500 font-semibold',
 }
 
 const sizeStyles: Record<string, string> = {
