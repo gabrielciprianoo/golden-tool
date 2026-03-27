@@ -98,3 +98,25 @@ export interface InventoryStats {
   outOfStockCount: number
   categoryBreakdown: Record<PartCategory, number>
 }
+
+export type ToolCategory = 'normal' | 'refaccion'
+
+export interface Tool {
+  id: string
+  name: string
+  category: ToolCategory
+  price: number
+  supplier: string
+  entryDate: string
+  quantity: number
+  unassignedQuantity: number
+}
+
+export interface ToolInput {
+  name: string
+  category: ToolCategory
+  price: number
+  supplier?: string
+  quantity: number
+  unassignedQuantity: number
+}

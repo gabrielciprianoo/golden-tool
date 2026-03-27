@@ -39,6 +39,10 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   error?: boolean
 }
 
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  error?: boolean
+}
+
 export interface FormFieldProps {
   label: string
   htmlFor: string
