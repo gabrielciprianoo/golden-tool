@@ -43,12 +43,20 @@ type WorkerFormValues = {
 }
 
 export const WorkersPage = () => {
-  const { workers, isLoading, addWorker, updateWorker, deleteWorker, getNextCode, searchTerm, filterArea, setSearchTerm, setFilterArea } = useWorkersStore()
+  const { workers, isLoading, addWorker, updateWorker, deleteWorker, getNextCode, searchTerm, filterArea, setSearchTerm, setFilterArea, fetchWorkers } = useWorkersStore()
   const { addToast } = useToastStore()
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
   const [searchInput, setSearchInput] = useState(searchTerm)
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
+
+  useEffect(() => {
+    if (!initialLoadDone) {
+      fetchWorkers()
+      setInitialLoadDone(true)
+    }
+  }, [fetchWorkers, initialLoadDone])
 
   const {
     register,

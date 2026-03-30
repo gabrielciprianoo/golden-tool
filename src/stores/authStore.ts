@@ -24,31 +24,38 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       login: async (credentials: LoginCredentials) => {
-        set({ isLoading: true, error: null })
-        try {
-          const response = await authLogin(credentials)
-          if (response.success && response.user) {
-            set({
-              user: response.user,
-              isAuthenticated: true,
-              isLoading: false,
-            })
-            return true
-          } else {
-            set({
-              error: response.error || 'Credenciales incorrectas',
-              isLoading: false,
-            })
-            return false
-          }
-        } catch {
-          set({
-            error: 'Error de conexión. Intenta de nuevo.',
-            isLoading: false,
-          })
-          return false
-        }
-      },
+  set({ isLoading: true, error: null })
+
+  try {
+    const response = await authLogin(credentials)
+
+    if (response.success && response.token && response.user) {
+      const { token, user } = response
+
+      localStorage.setItem('token', token)
+
+      set({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+      })
+
+      return true
+    } else {
+      set({
+        error: response.error || 'Credenciales incorrectas',
+        isLoading: false,
+      })
+      return false
+    }
+  } catch {
+    set({
+      error: 'Error de conexión. Intenta de nuevo.',
+      isLoading: false,
+    })
+    return false
+  }
+},
 
       logout: async () => {
         await authLogout()
