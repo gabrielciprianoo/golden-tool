@@ -2,11 +2,7 @@ import { create } from 'zustand'
 import type { Worker, CreateWorkerInput, WorkerArea } from '../types/worker'
 import { workerService } from '../services/workerService'
 
-/*
-|--------------------------------------------------------------------------
-| 🔥 Helper para transformar backend → frontend
-|--------------------------------------------------------------------------
-*/
+
 const formatWorker = (w: any): Worker => ({
   ...w,
   lastName: w.lastname,

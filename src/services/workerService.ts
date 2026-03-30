@@ -8,12 +8,10 @@ export const workerService = {
   async getAll(): Promise<ApiResult<Worker[]>> {
     const result = await get<any>(BASE_URL)
 
-console.log('GET WORKERS RESPONSE:', result)
-
     if (result.success && result.data) {
       return {
         success: true,
-        data: result.data, // 🔥 aquí extraemos el array real
+        data: result.data, 
       }
     }
 
@@ -26,7 +24,6 @@ console.log('GET WORKERS RESPONSE:', result)
 async create(data: CreateWorkerInput): Promise<ApiResult<Worker>> {
   return post<Worker>(BASE_URL, {
     name: data.name,
-    lastname: data.lastName, // 🔥 mapeo limpio aquí
     area: data.area,
   })
 },
@@ -34,7 +31,7 @@ async create(data: CreateWorkerInput): Promise<ApiResult<Worker>> {
  async update(id: string, data: CreateWorkerInput): Promise<ApiResult<Worker>> {
   return put<Worker>(`${BASE_URL}/${id}`, {
     name: data.name,
-    lastname: data.lastName, // 🔥 FIX
+    lastname: data.lastName,
     area: data.area,
   })
 },
