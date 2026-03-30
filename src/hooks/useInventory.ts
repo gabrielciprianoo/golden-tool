@@ -4,6 +4,7 @@ import { herramientaService } from '../services/herramientaService'
 
 interface InventoryFilters {
   search: string
+  supplier: string
   category: ToolCategory | ''
   status: ToolStatus | ''
 }
@@ -27,6 +28,7 @@ export const useInventory = (): UseInventoryReturn => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [filters, setFilters] = useState<InventoryFilters>({
     search: '',
+    supplier: '',
     category: '',
     status: '',
   })
@@ -75,10 +77,12 @@ export const useInventory = (): UseInventoryReturn => {
   const filteredTools = useMemo(() => {
     return tools.filter(tool => {
       const matchesSearch = tool.name.toLowerCase().includes(filters.search.toLowerCase())
+      const matchesSupplier = filters.supplier === '' || 
+        (tool.supplier && tool.supplier.toLowerCase().includes(filters.supplier.toLowerCase()))
       const matchesCategory = filters.category === '' || tool.category === filters.category
       const matchesStatus = filters.status === '' || tool.status === filters.status
 
-      return matchesSearch && matchesCategory && matchesStatus
+      return matchesSearch && matchesSupplier && matchesCategory && matchesStatus
     })
   }, [tools, filters])
 

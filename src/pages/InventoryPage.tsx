@@ -63,10 +63,12 @@ export const InventoryPage = () => {
         tools={filteredTools}
         isLoading={isLoading}
         search={filters.search}
+        supplier={filters.supplier}
         category={filters.category}
         status={filters.status}
         totalCount={tools.length}
         onSearchChange={(value) => setFilters({ search: value })}
+        onSupplierChange={(value) => setFilters({ supplier: value })}
         onCategoryChange={(value) => setFilters({ category: value })}
         onStatusChange={(value) => setFilters({ status: value })}
         onEdit={handleEdit}

@@ -8,6 +8,7 @@ export interface User {
   username: string
   email: string
   name: string
+  role: 'admin' | 'worker'
 }
 
 export interface AuthResponse {

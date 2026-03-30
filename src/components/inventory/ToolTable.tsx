@@ -9,10 +9,12 @@ interface ToolTableProps {
   tools: Tool[]
   isLoading: boolean
   search: string
+  supplier: string
   category: ToolCategory | ''
   status: ToolStatus | ''
   totalCount: number
   onSearchChange: (value: string) => void
+  onSupplierChange: (value: string) => void
   onCategoryChange: (value: ToolCategory | '') => void
   onStatusChange: (value: ToolStatus | '') => void
   onEdit: (tool: Tool) => void
@@ -85,10 +87,12 @@ export const ToolTable: React.FC<ToolTableProps> = ({
   tools,
   isLoading,
   search,
+  supplier,
   category,
   status,
   totalCount,
   onSearchChange,
+  onSupplierChange,
   onCategoryChange,
   onStatusChange,
   onEdit,
@@ -123,6 +127,12 @@ export const ToolTable: React.FC<ToolTableProps> = ({
               className="pl-10"
             />
           </div>
+          <Input
+            value={supplier}
+            onChange={(e) => onSupplierChange(e.target.value)}
+            placeholder="Buscar proveedor..."
+            className="w-full md:w-48"
+          />
           <Select
             value={category}
             onChange={(e) => onCategoryChange(e.target.value as ToolCategory | '')}
