@@ -31,9 +31,13 @@ async create(data: CreateWorkerInput): Promise<ApiResult<Worker>> {
   })
 },
 
-  async update(id: string, data: CreateWorkerInput): Promise<ApiResult<Worker>> {
-    return put<Worker>(`${BASE_URL}/${id}`, data)
-  },
+ async update(id: string, data: CreateWorkerInput): Promise<ApiResult<Worker>> {
+  return put<Worker>(`${BASE_URL}/${id}`, {
+    name: data.name,
+    lastname: data.lastName, // 🔥 FIX
+    area: data.area,
+  })
+},
 
   async patch(id: string, data: Partial<CreateWorkerInput>): Promise<ApiResult<Worker>> {
     return patch<Worker>(`${BASE_URL}/${id}`, data)
