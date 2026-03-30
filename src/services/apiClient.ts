@@ -1,7 +1,10 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 import type { ApiError, ApiResult, RequestConfig } from '../types/api'
 
+
 const API_BASE_URL = import.meta.env.VITE_API_URL
+
+
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -135,7 +138,11 @@ function handleError(error: unknown): ApiError {
     success: false,
     error: 'Error desconocido',
     statusCode: 500,
+
   }
+  
 }
+
+
 
 export default apiClient
