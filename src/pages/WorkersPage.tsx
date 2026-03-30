@@ -263,7 +263,7 @@ export const WorkersPage = () => {
                 {filteredWorkers.map((worker) => (
                   <tr key={worker.id} className="border-b border-[var(--border)] hover:bg-[var(--accent-bg)] transition-colors">
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-surface-100 text-surface-700 dark:bg-surface-700 dark:text-surface-200">
                         {worker.code}
                       </span>
                     </td>
