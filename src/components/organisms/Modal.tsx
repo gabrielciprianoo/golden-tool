@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { IconClose } from '../atoms'
 
 interface ModalProps {
   isOpen: boolean
@@ -14,13 +15,6 @@ const sizeClasses = {
   md: 'max-w-lg',
   lg: 'max-w-2xl',
 }
-
-const IconClose = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-)
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, size = 'md' }) => {
   const modalRef = useRef<HTMLDivElement>(null)
@@ -92,7 +86,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             className="p-1.5 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
             aria-label="Cerrar modal"
           >
-            <IconClose />
+            <IconClose className="w-5 h-5" />
           </button>
         </div>
 

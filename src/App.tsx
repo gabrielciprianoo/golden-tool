@@ -15,10 +15,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 }
 
 function App() {
-  const verifyAuth = useAuthStore((state) => state.verifyAuth)
-
   useEffect(() => {
-    verifyAuth()
+    useAuthStore.getState().verifyAuth()
   }, [])
 
   return (

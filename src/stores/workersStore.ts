@@ -2,13 +2,6 @@ import { create } from 'zustand'
 import type { Worker, CreateWorkerInput, WorkerArea } from '../types/worker'
 import { workerService } from '../services/workerService'
 
-
-const formatWorker = (w: any): Worker => ({
-  ...w,
-  lastName: w.lastname,
-  code: w.worker_code,
-})
-
 interface WorkersState {
   workers: Worker[]
   isLoading: boolean
@@ -24,7 +17,6 @@ interface WorkersState {
   getNextCode: () => string
   setSearchTerm: (term: string) => void
   setFilterArea: (area: WorkerArea | '') => void
-  getFilteredWorkers: () => Worker[]
   clearFilters: () => void
 }
 
@@ -35,11 +27,6 @@ export const useWorkersStore = create<WorkersState>()((set, get) => ({
   searchTerm: '',
   filterArea: '',
 
-  /*
-  |--------------------------------------------------------------------------
-  | Utils
-  |--------------------------------------------------------------------------
-  */
   getNextCode: () => {
     const count = get().workers.length
     const num = count + 1
@@ -47,58 +34,21 @@ export const useWorkersStore = create<WorkersState>()((set, get) => ({
   },
 
   setSearchTerm: (term: string) => set({ searchTerm: term }),
-
   setFilterArea: (area: WorkerArea | '') => set({ filterArea: area }),
-
   clearFilters: () => set({ searchTerm: '', filterArea: '' }),
 
-  getFilteredWorkers: () => {
-    const { workers, searchTerm, filterArea } = get()
-    const term = searchTerm.toLowerCase().trim()
+  fetchWorkers: async () => {
+    set({ isLoading: true, error: null })
 
-    return workers.filter((worker) => {
-      const matchesSearch =
-        !term ||
-        worker.name.toLowerCase().includes(term) ||
-        worker.lastName.toLowerCase().includes(term) ||
-        worker.code.toLowerCase().includes(term)
+    const res = await workerService.getAll()
 
-      const matchesArea = !filterArea || worker.area === filterArea
-
-      return matchesSearch && matchesArea
-    })
+    if (res.success && res.data) {
+      set({ workers: res.data, isLoading: false })
+    } else {
+      const errorMsg = 'error' in res ? res.error : 'Error al cargar trabajadores'
+      set({ isLoading: false, error: errorMsg })
+    }
   },
-
-  /*
-  |--------------------------------------------------------------------------
-  | 🔌 API CALLS
-  |--------------------------------------------------------------------------
-  */
-
- fetchWorkers: async () => {
-  set({ isLoading: true, error: null })
-
-  const res = await workerService.getAll()
-
-  console.log('DATA:', res.data) // 👈 DEBUG
-
-  if (res.success && res.data) {
-    const formattedWorkers = res.data.map((w: any) => ({
-      ...w,
-      lastName: w.lastname,
-      code: w.worker_code,
-    }))
-
-    console.log('FORMATTED:', formattedWorkers) // 👈 DEBUG
-
-    set({
-      workers: formattedWorkers,
-      isLoading: false,
-    })
-  } else {
-    set({ isLoading: false })
-  }
-},
 
   addWorker: async (data: CreateWorkerInput) => {
     set({ isLoading: true, error: null })
@@ -106,17 +56,10 @@ export const useWorkersStore = create<WorkersState>()((set, get) => ({
     const result = await workerService.create(data)
 
     if (result.success && result.data) {
-      const workers = get().workers
-
-      set({
-        workers: [...workers, formatWorker(result.data)],
-        isLoading: false,
-      })
-
+      set({ workers: [...get().workers, result.data], isLoading: false })
       return true
     } else {
-      const errorMsg =
-        'error' in result ? result.error : 'Error al registrar trabajador'
+      const errorMsg = 'error' in result ? result.error : 'Error al registrar trabajador'
       set({ error: errorMsg, isLoading: false })
       return false
     }
@@ -128,15 +71,13 @@ export const useWorkersStore = create<WorkersState>()((set, get) => ({
     const result = await workerService.update(id, data)
 
     if (result.success && result.data) {
-      const workers = get().workers.map((w) =>
-        w.id === id ? formatWorker(result.data) : w
-      )
-
-      set({ workers, isLoading: false })
+      set({
+        workers: get().workers.map((w) => (w.id === id ? result.data! : w)),
+        isLoading: false,
+      })
       return true
     } else {
-      const errorMsg =
-        'error' in result ? result.error : 'Error al actualizar trabajador'
+      const errorMsg = 'error' in result ? result.error : 'Error al actualizar trabajador'
       set({ error: errorMsg, isLoading: false })
       return false
     }
@@ -148,13 +89,10 @@ export const useWorkersStore = create<WorkersState>()((set, get) => ({
     const result = await workerService.delete(id)
 
     if (result.success) {
-      const workers = get().workers.filter((w) => w.id !== id)
-
-      set({ workers, isLoading: false })
+      set({ workers: get().workers.filter((w) => w.id !== id), isLoading: false })
       return true
     } else {
-      const errorMsg =
-        'error' in result ? result.error : 'Error al eliminar trabajador'
+      const errorMsg = 'error' in result ? result.error : 'Error al eliminar trabajador'
       set({ error: errorMsg, isLoading: false })
       return false
     }

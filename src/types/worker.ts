@@ -2,9 +2,9 @@ export type WorkerArea = 'montaje/desmontaje' | 'armado/desarmado'
 
 export interface Worker {
   id: string
-  code: string
+  worker_code: string
   name: string
-  lastName: string
+  lastname: string
   area: WorkerArea
   createdAt: string
 }

@@ -6,19 +6,8 @@ const BASE_URL = '/workers'
 
 export const workerService = {
   async getAll(): Promise<ApiResult<Worker[]>> {
-    const result = await get<any>(BASE_URL)
-
-    if (result.success && result.data) {
-      return {
-        success: true,
-        data: result.data, 
-      }
-    }
-
-    return {
-      success: false,
-      error: result.error,
-    }
+    const result = await get<Worker[]>(BASE_URL)
+    return result
   },
 
 async create(data: CreateWorkerInput): Promise<ApiResult<Worker>> {
