@@ -44,6 +44,7 @@ type WorkerFormValues = {
 
 export const WorkersPage = () => {
   const { workers, isLoading, addWorker, updateWorker, deleteWorker, getNextCode, searchTerm, filterArea, setSearchTerm, setFilterArea, fetchWorkers } = useWorkersStore()
+  console.log('WORKERS EN COMPONENTE:', workers)
   const { addToast } = useToastStore()
   
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -51,12 +52,9 @@ export const WorkersPage = () => {
   const [searchInput, setSearchInput] = useState(searchTerm)
   const [initialLoadDone, setInitialLoadDone] = useState(false)
 
-  useEffect(() => {
-    if (!initialLoadDone) {
-      fetchWorkers()
-      setInitialLoadDone(true)
-    }
-  }, [fetchWorkers, initialLoadDone])
+ useEffect(() => {
+  useWorkersStore.getState().fetchWorkers()
+}, [])
 
   const {
     register,

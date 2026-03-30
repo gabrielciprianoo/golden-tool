@@ -8,10 +8,12 @@ export const workerService = {
   async getAll(): Promise<ApiResult<Worker[]>> {
     const result = await get<any>(BASE_URL)
 
+console.log('GET WORKERS RESPONSE:', result)
+
     if (result.success && result.data) {
       return {
         success: true,
-        data: result.data.data, // 🔥 aquí extraemos el array real
+        data: result.data, // 🔥 aquí extraemos el array real
       }
     }
 
