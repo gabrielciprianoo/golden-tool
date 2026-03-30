@@ -24,6 +24,7 @@ export const workerService = {
 async create(data: CreateWorkerInput): Promise<ApiResult<Worker>> {
   return post<Worker>(BASE_URL, {
     name: data.name,
+    lastname: data.lastName,
     area: data.area,
   })
 },
