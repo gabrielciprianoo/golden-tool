@@ -98,16 +98,19 @@ export const useInventory = (): UseInventoryReturn => {
       const res = await herramientaService.create(payload)
 
       if ('success' in res && res.success && 'data' in res && res.data) {
-        const created = res.data
+        const responseData = res.data as unknown as { data?: Record<string, unknown> }
+        const created = responseData.data
+        if (!created) return false
+        
         const newTool: Tool = {
           id: String(created.id || Date.now()),
-          name: created.nombre,
-          category: created.categoria as ToolCategory,
-          price: Number(created.precio),
-          supplier: created.proveedor || '',
-          quantity: created.cantidad,
-          unassignedQuantity: created.cantidad_no_asignada,
-          entryDate: created.fecha_ingreso,
+          name: String(created.nombre || ''),
+          category: (String(created.categoria) || 'normal') as ToolCategory,
+          price: Number(created.precio) || 0,
+          supplier: String(created.proveedor || ''),
+          quantity: Number(created.cantidad) || 0,
+          unassignedQuantity: Number(created.cantidad_no_asignada) || 0,
+          entryDate: String(created.fecha_ingreso || ''),
           status: 'active' as ToolStatus,
         }
         setTools(prev => [...prev, newTool])

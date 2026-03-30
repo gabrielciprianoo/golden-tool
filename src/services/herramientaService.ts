@@ -11,22 +11,23 @@ export interface Herramienta {
   cantidad_no_asignada: number
 }
 
-const ENDPOINT = '/herramientas'
+const GET_ENDPOINT = '/tools'
+const MUTATE_ENDPOINT = '/tool'
 
 export const herramientaService = {
   getAll: async () => {
-    return get<Herramienta[]>(ENDPOINT)
+    return get<Herramienta[]>(GET_ENDPOINT)
   },
 
   create: async (data: Herramienta) => {
-    return post<Herramienta>(ENDPOINT, data)
+    return post<Herramienta>(MUTATE_ENDPOINT, data)
   },
 
   update: async (id: number, data: Herramienta) => {
-    return put<Herramienta>(`${ENDPOINT}/${id}`, data)
+    return put<Herramienta>(`${MUTATE_ENDPOINT}/${id}`, data)
   },
 
   delete: async (id: number) => {
-    return del(`${ENDPOINT}/${id}`)
+    return del(`${MUTATE_ENDPOINT}/${id}`)
   }
 }
