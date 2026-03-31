@@ -14,7 +14,7 @@ const toolSchema = object({
   price: number('El precio debe ser un número'),
   supplier: optional(string()),
   quantity: number('La cantidad debe ser un número'),
-  unassignedQuantity: number('La cantidad no asignada debe ser un número'),
+  unassignedQuantity: number('La cantidad disponible debe ser un número'),
   status: optional(string()),
 })
 

@@ -106,12 +106,12 @@ export const ToolTable: React.FC<ToolTableProps> = ({
           <h1 className="text-2xl font-bold text-[var(--text-h)]">Inventario de Herramientas</h1>
           <p className="text-sm text-[var(--text)] mt-1">
             {tools.length} {tools.length === 1 ? 'herramienta' : 'herramientas'} 
-            {tools.length !== totalCount && ` (${totalCount} total)`}
+            {tools.length !== totalCount && ` (${totalCount} en total)`}
           </p>
         </div>
-        <Button onClick={onCreateNew}>
-          <IconPlus /> Nueva herramienta
-        </Button>
+<Button onClick={onCreateNew}>
+            <IconPlus /> Nueva herramienta
+          </Button>
       </div>
 
       <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-4">
@@ -184,7 +184,7 @@ export const ToolTable: React.FC<ToolTableProps> = ({
                     Cantidad
                   </th>
                   <th className="text-left text-xs font-semibold text-[var(--text)] uppercase tracking-wider px-4 py-3">
-                    Ingreso
+                    Fecha de Entrada
                   </th>
                   <th className="text-center text-xs font-semibold text-[var(--text)] uppercase tracking-wider px-4 py-3">
                     Estado

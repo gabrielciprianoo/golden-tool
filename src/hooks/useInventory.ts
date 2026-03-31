@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { Tool, ToolInput, ToolCategory, ToolStatus } from '../types/inventory'
-import { herramientaService } from '../services/herramientaService'
+import { toolService } from '../services/toolService'
 
 interface InventoryFilters {
   search: string
@@ -36,28 +36,28 @@ export const useInventory = (): UseInventoryReturn => {
   const fetchTools = useCallback(async () => {
     setIsLoading(true)
     try {
-      const res = await herramientaService.getAll()
+      const res = await toolService.getAll()
       if ('success' in res && !res.success) {
         console.error('Error fetching tools:', 'error' in res ? res.error : 'Unknown error')
         setTools([])
         return
       }
 
-      const responseData = 'data' in res ? res.data : []
+      const responseData = 'data' in res ? (res.data as unknown as Record<string, unknown>[]) : []
       if (!Array.isArray(responseData)) {
         setTools([])
         return
       }
 
-      const mapped: Tool[] = responseData.map((item) => ({
+      const mapped: Tool[] = responseData.map((item: Record<string, unknown>) => ({
         id: String(item.id),
-        name: item.nombre,
-        category: (item.categoria || 'normal') as ToolCategory,
-        price: Number(item.precio) || 0,
-        supplier: item.proveedor || '',
-        quantity: Number(item.cantidad) || 0,
-        unassignedQuantity: Number(item.cantidad_no_asignada) || 0,
-        entryDate: item.fecha_ingreso || '',
+        name: String(item.name || ''),
+        category: (String(item.category) || 'normal') as ToolCategory,
+        price: Number(item.price) || 0,
+        supplier: String(item.supplier || ''),
+        quantity: Number(item.quantity) || 0,
+        unassignedQuantity: Number(item.unassigned_quantity) || 0,
+        entryDate: String(item.entry_date || ''),
         status: 'active' as ToolStatus,
       }))
 
@@ -90,16 +90,16 @@ export const useInventory = (): UseInventoryReturn => {
     setIsSubmitting(true)
     try {
       const payload = {
-        nombre: data.name,
-        categoria: data.category,
-        precio: data.price,
-        proveedor: data.supplier || '',
-        fecha_ingreso: new Date().toISOString().split('T')[0],
-        cantidad: data.quantity,
-        cantidad_no_asignada: data.unassignedQuantity,
+        name: data.name,
+        category: data.category,
+        price: data.price,
+        supplier: data.supplier || '',
+        entry_date: new Date().toISOString().split('T')[0],
+        quantity: data.quantity,
+        unassigned_quantity: data.unassignedQuantity,
       }
 
-      const res = await herramientaService.create(payload)
+      const res = await toolService.create(payload)
 
       if ('success' in res && res.success && 'data' in res && res.data) {
         const responseData = res.data as unknown as { data?: Record<string, unknown> }
@@ -108,13 +108,13 @@ export const useInventory = (): UseInventoryReturn => {
         
         const newTool: Tool = {
           id: String(created.id || Date.now()),
-          name: String(created.nombre || ''),
-          category: (String(created.categoria) || 'normal') as ToolCategory,
-          price: Number(created.precio) || 0,
-          supplier: String(created.proveedor || ''),
-          quantity: Number(created.cantidad) || 0,
-          unassignedQuantity: Number(created.cantidad_no_asignada) || 0,
-          entryDate: String(created.fecha_ingreso || ''),
+          name: String(created.name || ''),
+          category: (String(created.category) || 'normal') as ToolCategory,
+          price: Number(created.price) || 0,
+          supplier: String(created.supplier || ''),
+          quantity: Number(created.quantity) || 0,
+          unassignedQuantity: Number(created.unassigned_quantity) || 0,
+          entryDate: String(created.entry_date || ''),
           status: 'active' as ToolStatus,
         }
         setTools(prev => [...prev, newTool])
@@ -133,16 +133,16 @@ export const useInventory = (): UseInventoryReturn => {
     setIsSubmitting(true)
     try {
       const payload = {
-        nombre: data.name,
-        categoria: data.category,
-        precio: data.price,
-        proveedor: data.supplier || '',
-        fecha_ingreso: new Date().toISOString().split('T')[0],
-        cantidad: data.quantity,
-        cantidad_no_asignada: data.unassignedQuantity,
+        name: data.name,
+        category: data.category,
+        price: data.price,
+        supplier: data.supplier || '',
+        entry_date: new Date().toISOString().split('T')[0],
+        quantity: data.quantity,
+        unassigned_quantity: data.unassignedQuantity,
       }
 
-      await herramientaService.update(Number(id), payload)
+      await toolService.update(Number(id), payload)
 
       setTools(prev =>
         prev.map(t =>
@@ -161,7 +161,7 @@ export const useInventory = (): UseInventoryReturn => {
   const deleteTool = useCallback(async (id: string): Promise<boolean> => {
     setIsSubmitting(true)
     try {
-      await herramientaService.delete(Number(id))
+      await toolService.delete(Number(id))
       setTools(prev => prev.filter(t => t.id !== id))
       return true
     } catch (error) {
