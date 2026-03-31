@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form'
 import { Button, Input, Select, IconSearch, IconEdit, IconTrash, IconUser } from '../components/atoms'
 import { Modal, ToastContainer } from '../components/organisms'
 import { FormField } from '../components/molecules'
-import { useWorkersStore } from '../stores/workersStore'
 import { useToastStore } from '../stores/toastStore'
+import { useWorkers, useCreateWorker, useUpdateWorker, useDeleteWorker } from '../hooks/useWorkers'
 import { WORKER_AREAS, type WorkerArea, type CreateWorkerInput, type Worker } from '../types/worker'
 import { validateField, workerValidationRules } from '../schemas/workerSchema'
 
@@ -15,29 +15,20 @@ type WorkerFormValues = {
 }
 
 export const WorkersPage = () => {
-  const {
-    workers,
-    isLoading,
-    addWorker,
-    updateWorker,
-    deleteWorker,
-    getNextCode,
-    searchTerm,
-    filterArea,
-    setSearchTerm,
-    setFilterArea,
-    fetchWorkers,
-  } = useWorkersStore()
+  const { data: workers = [], isLoading: workersLoading } = useWorkers()
+  const createWorkerMutation = useCreateWorker()
+  const updateWorkerMutation = useUpdateWorker()
+  const deleteWorkerMutation = useDeleteWorker()
   
   const { addToast } = useToastStore()
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
   const [searchInput, setSearchInput] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterArea, setFilterArea] = useState<WorkerArea | ''>('')
 
-  useEffect(() => {
-    fetchWorkers()
-  }, [fetchWorkers])
+  const isLoading = workersLoading || createWorkerMutation.isPending || updateWorkerMutation.isPending || deleteWorkerMutation.isPending
 
   const {
     register,
@@ -64,7 +55,13 @@ export const WorkersPage = () => {
       setSearchTerm(searchInput)
     }, 300)
     return () => clearTimeout(timer)
-  }, [searchInput, setSearchTerm])
+  }, [searchInput])
+
+  const getNextCode = useCallback(() => {
+    const count = workers.length
+    const num = count + 1
+    return `TRB-${num.toString().padStart(3, '0')}`
+  }, [workers.length])
 
   const handleOpenModal = useCallback((worker?: Worker) => {
     if (worker) {
@@ -97,33 +94,35 @@ export const WorkersPage = () => {
       area: data.area,
     }
 
-    let success: boolean
+    let success = false
 
-    if (editingWorker) {
-      success = await updateWorker(editingWorker.id, input)
-      if (success) addToast('Trabajador actualizado correctamente', 'success')
-    } else {
-      success = await addWorker(input)
-      if (success) {
+    try {
+      if (editingWorker) {
+        await updateWorkerMutation.mutateAsync({ id: editingWorker.id, data: input })
+        addToast('Trabajador actualizado correctamente', 'success')
+        success = true
+      } else {
+        await createWorkerMutation.mutateAsync(input)
         addToast('Trabajador registrado correctamente', 'success')
         reset()
+        success = true
       }
+    } catch {
+      addToast('Error al guardar trabajador', 'error')
     }
 
     if (success) {
       handleCloseModal()
-    } else {
-      addToast('Error al guardar trabajador', 'error')
     }
   }
 
   const handleDelete = async (id: string) => {
     const worker = workers.find((w) => w.id === id)
     if (confirm(`¿Estás seguro de eliminar al trabajador ${worker?.name} ${worker?.lastname}?`)) {
-      const success = await deleteWorker(id)
-      if (success) {
+      try {
+        await deleteWorkerMutation.mutateAsync(id)
         addToast('Trabajador eliminado correctamente', 'success')
-      } else {
+      } catch {
         addToast('Error al eliminar trabajador', 'error')
       }
     }
