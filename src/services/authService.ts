@@ -2,12 +2,13 @@ import type { LoginCredentials, AuthResponse, User } from '../types/auth'
 import { post, get } from './apiClient'
 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  const response = await post<{ user: User }>('/login', credentials)
+  const response = await post<{ user: User; token: string }>('/login', credentials)
 
   if (response.success && response.data) {
     return {
       success: true,
       user: response.data.user,
+      token: response.data.token,
     }
   }
 
