@@ -1,14 +1,18 @@
+import axios from 'axios'
 import type { LoginCredentials, AuthResponse, User } from '../types/auth'
 import { post, get } from './apiClient'
 
+const SANCTUM_URL = import.meta.env.VITE_API_URL?.replace('/api', '') ?? ''
+
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  const response = await post<{ user: User; token: string }>('/login', credentials)
+  await axios.get(`${SANCTUM_URL}/sanctum/csrf-cookie`, { withCredentials: true })
+
+  const response = await post<{ user: User }>('/login', credentials)
 
   if (response.success && response.data) {
     return {
       success: true,
       user: response.data.user,
-      token: response.data.token,
     }
   }
 
