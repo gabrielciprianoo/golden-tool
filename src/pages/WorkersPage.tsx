@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
-import { Button, Input, Select, IconSearch, IconEdit, IconTrash, IconUser } from '../components/atoms'
+import { useNavigate } from 'react-router-dom'
+import { Button, Input, Select, IconSearch, IconEdit, IconTrash, IconUser, IconWrench, IconRefresh } from '../components/atoms'
 import { Modal, ToastContainer } from '../components/organisms'
 import { FormField } from '../components/molecules'
 import { useToastStore } from '../stores/toastStore'
@@ -15,6 +16,7 @@ type WorkerFormValues = {
 }
 
 export const WorkersPage = () => {
+  const navigate = useNavigate()
   const { data: workers = [], isLoading: workersLoading } = useWorkers()
   const createWorkerMutation = useCreateWorker()
   const updateWorkerMutation = useUpdateWorker()
@@ -252,6 +254,19 @@ export const WorkersPage = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/admin/workers/assign/${worker.id}`)}
+                          className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
+                          title="Agregar Herramienta"
+                        >
+                          <IconWrench className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
+                          title="Reasignar Herramientas"
+                        >
+                          <IconRefresh className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => handleOpenModal(worker)}
                           className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"

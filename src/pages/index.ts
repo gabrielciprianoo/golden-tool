@@ -1,5 +1,6 @@
 export { LoginPage } from './LoginPage'
 export { AdminPage } from './AdminPage'
 export { WorkersPage } from './WorkersPage'
+export { AssignToolsPage } from './AssignToolsPage'
 export { InventoryPage } from './InventoryPage'
 export { ReviewsPage } from './ReviewsPage'
