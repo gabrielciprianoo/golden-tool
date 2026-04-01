@@ -6,7 +6,9 @@ import { useTools } from '../hooks/useTools'
 import { useWorkers } from '../hooks/useWorkers'
 import { useCreateAssignment } from '../hooks/useAssignments'
 import { useToastStore } from '../stores/toastStore'
+import { useDebounceSearch } from '../hooks/useDebounceSearch'
 import { TOOL_STATES, type ToolState } from '../types/worker'
+import { formatAreaLabel, getStockStyle, formatCurrency } from '../utils/toolUtils'
 
 interface ToolSelection {
   id: number
@@ -22,14 +24,18 @@ interface ToolSelection {
 export const AssignToolsPage = () => {
   const { workerId } = useParams<{ workerId: string }>()
   const navigate = useNavigate()
-  const { data: workers = [] } = useWorkers()
+  const { data: workers = [], isLoading: workersLoading } = useWorkers()
   const { tools, isLoading: toolsLoading, refetch } = useTools()
   const { createAssignment, isCreating } = useCreateAssignment()
   const { addToast } = useToastStore()
+  
+  const { searchTerm, debouncedSearch, setSearchTerm, clearSearch } = useDebounceSearch({
+    delay: 300,
+  })
 
-  const worker = workers.find((w) => w.id === Number(workerId))
+ const worker = workers.find((w) => w.id === Number(workerId))
 
-  const availableTools = useMemo(() => {
+  const availableTools = useMemo((): ToolSelection[] => {
     return (tools ?? []).map((t) => ({
       id: Number(t.id),
       name: t.name,
@@ -42,19 +48,24 @@ export const AssignToolsPage = () => {
     }))
   }, [tools])
 
-  const [toolList, setToolList] = useState<ToolSelection[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
+  const [toolList, setToolList] = useState<ToolSelection[]>(() => availableTools)
 
   useEffect(() => {
     setToolList(availableTools)
   }, [availableTools])
 
   const filteredTools = useMemo(() => {
-    const term = searchTerm.toLowerCase()
+    const term = debouncedSearch.toLowerCase()
     return toolList.filter((t) => t.name.toLowerCase().includes(term))
-  }, [toolList, searchTerm])
+  }, [toolList, debouncedSearch])
 
-  const selectedCount = toolList.filter((t) => t.quantity > 0).length
+  const selectedTools = useMemo(
+    () => toolList.filter((t) => t.quantity > 0),
+    [toolList]
+  )
+
+  const selectedCount = selectedTools.length
+  const totalItems = selectedTools.reduce((acc, t) => acc + t.quantity, 0)
 
   const increaseQuantity = (id: number) => {
     setToolList((prev) =>
@@ -83,41 +94,33 @@ export const AssignToolsPage = () => {
   }
 
   const handleSubmit = async () => {
-    const selectedTools = toolList.filter((t) => t.quantity > 0)
-
-    if (selectedTools.length === 0) {
+    if (selectedCount === 0) {
       addToast('Selecciona al menos una herramienta', 'error')
       return
     }
 
     try {
-      for (const tool of selectedTools) {
-        await createAssignment({
-          worker_id: Number(workerId),
-          tool_id: tool.id,
-          assigned_quantity: tool.quantity,
-          state: tool.state,
-          date: new Date().toISOString().split('T')[0],
-        })
-      }
+      const today = new Date().toISOString().split('T')[0]
+      
+      await Promise.all(
+        selectedTools.map((tool) =>
+          createAssignment({
+            worker_id: Number(workerId),
+            tool_id: tool.id,
+            assigned_quantity: tool.quantity,
+            state: tool.state,
+            date: today,
+          })
+        )
+      )
 
       addToast('Herramientas asignadas correctamente', 'success')
       await refetch()
       navigate('/admin/workers')
-    } catch (error) {
-      console.error(error)
+    } catch {
       addToast('Error al asignar herramientas', 'error')
     }
   }
-
-  const areaLabel = (area: string) => {
-    return area === 'montaje/desmontaje'
-      ? 'Montaje/Desmontaje'
-      : 'Armado/Desarmado'
-  }
-
-  const selectedTools = toolList.filter((t) => t.quantity > 0)
-  const totalItems = selectedTools.reduce((acc, t) => acc + t.quantity, 0)
 
   if (!worker) {
     return (
@@ -141,11 +144,12 @@ export const AssignToolsPage = () => {
     )
   }
 
+  const isLoading = workersLoading || toolsLoading
+
   return (
     <div className="admin-module">
       <ToastContainer />
 
-      {/* Page Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-[var(--text-h)] mb-2">
           Asignar Herramientas
@@ -155,7 +159,6 @@ export const AssignToolsPage = () => {
         </p>
       </div>
 
-      {/* Worker Info Card */}
       <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-5 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center">
@@ -166,7 +169,7 @@ export const AssignToolsPage = () => {
               {worker.name} {worker.lastname}
             </h3>
             <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-surface-100 text-surface-700">
-              {areaLabel(worker.area)}
+              {formatAreaLabel(worker.area)}
             </span>
           </div>
           {selectedCount > 0 && (
@@ -180,7 +183,6 @@ export const AssignToolsPage = () => {
         </div>
       </div>
 
-      {/* Search Card */}
       <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="flex-1">
@@ -201,15 +203,14 @@ export const AssignToolsPage = () => {
             </div>
           </div>
           {searchTerm && (
-            <Button variant="ghost" size="md" onClick={() => setSearchTerm('')}>
+            <Button variant="ghost" size="md" onClick={clearSearch}>
               Limpiar
             </Button>
           )}
         </div>
       </div>
 
-      {/* Tools Table */}
-      {toolsLoading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -219,10 +220,12 @@ export const AssignToolsPage = () => {
             <IconPackage className="w-16 h-16 text-[var(--text)] opacity-40" />
           </div>
           <h3 className="text-lg font-semibold text-[var(--text-h)] mb-2">
-            {searchTerm ? 'No se encontraron herramientas' : 'No hay herramientas disponibles'}
+            {debouncedSearch ? 'No se encontraron herramientas' : 'No hay herramientas disponibles'}
           </h3>
           <p className="text-[var(--text)] text-sm">
-            {searchTerm ? `No hay herramientas que coincidan con "${searchTerm}"` : 'No hay herramientas en el inventario'}
+            {debouncedSearch 
+              ? `No hay herramientas que coincidan con "${debouncedSearch}"` 
+              : 'No hay herramientas en el inventario'}
           </p>
         </div>
       ) : (
@@ -239,86 +242,82 @@ export const AssignToolsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredTools.map((tool) => (
-                  <tr 
-                    key={tool.id} 
-                    className={`border-b border-[var(--border)] hover:bg-[var(--accent-bg)] transition-colors ${tool.quantity > 0 ? 'bg-primary-50/30' : ''}`}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          tool.quantity > 0 ? 'bg-primary-100' : 'bg-surface-100'
-                        }`}>
-                          <IconPackage className={`w-5 h-5 ${
-                            tool.quantity > 0 ? 'text-primary-600' : 'text-surface-400'
-                          }`} />
+                {filteredTools.map((tool) => {
+                  const stockInfo = getStockStyle(tool.unassignedQuantity)
+                  return (
+                    <tr 
+                      key={tool.id} 
+                      className={`border-b border-[var(--border)] hover:bg-[var(--accent-bg)] transition-colors ${tool.quantity > 0 ? 'bg-primary-50/30' : ''}`}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            tool.quantity > 0 ? 'bg-primary-100' : 'bg-surface-100'
+                          }`}>
+                            <IconPackage className={`w-5 h-5 ${
+                              tool.quantity > 0 ? 'text-primary-600' : 'text-surface-400'
+                            }`} />
+                          </div>
+                          <span className="font-medium text-[var(--text-h)]">{tool.name}</span>
                         </div>
-                        <span className="font-medium text-[var(--text-h)]">{tool.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-[var(--text-h)] font-medium">
-                      ${tool.price.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4">
-                      {tool.unassignedQuantity === 0 ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                          Sin stock
+                      </td>
+                      <td className="px-6 py-4 text-[var(--text-h)] font-medium">
+                        {formatCurrency(tool.price)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${stockInfo.className}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${stockInfo.dotClassName}`}></span>
+                          {stockInfo.label}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          {tool.unassignedQuantity} disponibles
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => decreaseQuantity(tool.id)}
-                          disabled={tool.quantity === 0}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--input-border)] text-[var(--text)] hover:bg-surface-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <IconMinus className="w-4 h-4" />
-                        </button>
-                        <span className={`w-8 text-center font-semibold ${
-                          tool.quantity > 0 ? 'text-primary-600' : 'text-[var(--text)]'
-                        }`}>
-                          {tool.quantity}
-                        </span>
-                        <button
-                          onClick={() => increaseQuantity(tool.id)}
-                          disabled={
-                            tool.quantity === tool.unassignedQuantity ||
-                            tool.unassignedQuantity === 0
-                          }
-                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--input-border)] text-[var(--text)] hover:bg-surface-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <IconPlus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {tool.quantity > 0 ? (
-                        <select
-                          value={tool.state}
-                          onChange={(e) =>
-                            handleStateChange(tool.id, e.target.value as ToolState)
-                          }
-                          className="px-3 py-2 rounded-lg border border-[var(--input-border)] bg-white text-sm text-[var(--text-h)] focus:outline-none focus:ring-2 focus:border-primary-500 focus:ring-primary-500/20"
-                        >
-                          {TOOL_STATES.map((s) => (
-                            <option key={s.value} value={s.value}>
-                              {s.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-[var(--text)] text-sm">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => decreaseQuantity(tool.id)}
+                            disabled={tool.quantity === 0}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--input-border)] text-[var(--text)] hover:bg-surface-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <IconMinus className="w-4 h-4" />
+                          </button>
+                          <span className={`w-8 text-center font-semibold ${
+                            tool.quantity > 0 ? 'text-primary-600' : 'text-[var(--text)]'
+                          }`}>
+                            {tool.quantity}
+                          </span>
+                          <button
+                            onClick={() => increaseQuantity(tool.id)}
+                            disabled={
+                              tool.quantity === tool.unassignedQuantity ||
+                              tool.unassignedQuantity === 0
+                            }
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--input-border)] text-[var(--text)] hover:bg-surface-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <IconPlus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {tool.quantity > 0 ? (
+                          <select
+                            value={tool.state}
+                            onChange={(e) =>
+                              handleStateChange(tool.id, e.target.value as ToolState)
+                            }
+                            className="px-3 py-2 rounded-lg border border-[var(--input-border)] bg-white text-sm text-[var(--text-h)] focus:outline-none focus:ring-2 focus:border-primary-500 focus:ring-primary-500/20"
+                          >
+                            {TOOL_STATES.map((s) => (
+                              <option key={s.value} value={s.value}>
+                                {s.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-[var(--text)] text-sm">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -330,7 +329,6 @@ export const AssignToolsPage = () => {
         </div>
       )}
 
-      {/* Actions */}
       <div className="mt-6 flex items-center justify-between">
         <div className="text-sm text-[var(--text)]">
           {selectedCount === 0 ? (

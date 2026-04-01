@@ -1,12 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { assignmentService, type AssignmentInput } from '../services/assignmentService'
-
-const getErrorMessage = (res: unknown): string => {
-  if (res && typeof res === 'object' && 'error' in res) {
-    return (res as { error: string }).error
-  }
-  return 'Error desconocido'
-}
+import { assignmentService, type AssignmentInput, type AssignmentUpdateInput } from '../services/assignmentService'
 
 export const useAssignmentsByWorker = (workerId: number) => {
   return useQuery({
@@ -14,15 +7,13 @@ export const useAssignmentsByWorker = (workerId: number) => {
     queryFn: async () => {
       const res = await assignmentService.getByWorker(workerId)
 
-      console.log("RESPUESTA COMPLETA:", res)
-
       const isSuccess = res?.data?.success === true
 
       if (!isSuccess) {
         throw new Error('Error al obtener asignaciones')
       }
 
-      return res.data.data ?? [] // 🔥 ESTA ES LA LÍNEA CLAVE
+      return res.data.data ?? []
     },
     enabled: !!workerId,
   })
@@ -44,6 +35,26 @@ export const useCreateAssignment = () => {
   return {
     createAssignment: mutation.mutateAsync,
     isCreating: mutation.isPending,
+    error: mutation.error,
+  }
+}
+
+export const useUpdateAssignment = () => {
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: AssignmentUpdateInput }) => {
+      return assignmentService.update(id, data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: ['assignations'] })
+    },
+  })
+
+  return {
+    updateAssignment: mutation.mutateAsync,
+    isUpdating: mutation.isPending,
     error: mutation.error,
   }
 }

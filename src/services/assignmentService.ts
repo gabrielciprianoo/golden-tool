@@ -1,7 +1,7 @@
-import { get, post, del } from './apiClient'
-import type { Assignment, AssignmentInput } from '../types/worker'
+import { get, post, del, put } from './apiClient'
+import type { Assignment, AssignmentInput, AssignmentUpdateInput } from '../types/worker'
 
-export type { AssignmentInput }
+export type { AssignmentInput, AssignmentUpdateInput }
 
 const ENDPOINT = '/asignations'
 
@@ -16,6 +16,10 @@ export const assignmentService = {
 
   create: async (data: AssignmentInput) => {
     return post<Assignment>(ENDPOINT, data)
+  },
+
+  update: async (id: number, data: AssignmentUpdateInput) => {
+    return put<Assignment>(`${ENDPOINT}/${id}`, data)
   },
 
   delete: async (id: number) => {

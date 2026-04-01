@@ -17,6 +17,15 @@ export interface Assignment {
   date: string
   createdAt: string
   updatedAt: string
+  tool?: {
+    name: string
+  }
+}
+
+export interface AssignmentWithTool extends Assignment {
+  tool?: {
+    name: string
+  }
 }
 
 export interface AssignmentInput {
@@ -25,6 +34,11 @@ export interface AssignmentInput {
   assigned_quantity: number
   state: ToolState
   date: string 
+}
+
+export interface AssignmentUpdateInput {
+  assigned_quantity?: number
+  state?: ToolState
 }
 export type WorkerArea = 'montaje/desmontaje' | 'armado/desarmado'
 
