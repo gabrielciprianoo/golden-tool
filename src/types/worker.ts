@@ -12,6 +12,7 @@ export interface Assignment {
   id: number
   id_worker: string
   id_tool: number
+  assigned_quantity: number
   state: ToolState
   date: string
   createdAt: string

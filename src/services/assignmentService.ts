@@ -1,4 +1,4 @@
-import { get, post } from './apiClient'
+import { get, post, del } from './apiClient'
 import type { Assignment, AssignmentInput } from '../types/worker'
 
 export type { AssignmentInput }
@@ -10,7 +10,15 @@ export const assignmentService = {
     return get<Assignment[]>(ENDPOINT)
   },
 
+  getByWorker: async (workerId: number) => {
+    return get<Assignment[]>(`${ENDPOINT}/worker/${workerId}`)
+  },
+
   create: async (data: AssignmentInput) => {
     return post<Assignment>(ENDPOINT, data)
+  },
+
+  delete: async (id: number) => {
+    return del(`${ENDPOINT}/${id}`)
   },
 }

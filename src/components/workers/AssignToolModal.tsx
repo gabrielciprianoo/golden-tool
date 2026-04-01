@@ -107,13 +107,13 @@ export const AssignToolModal = ({ isOpen, onClose, worker }: AssignToolModalProp
     setIsSubmitting(true)
     try {
       for (const tool of toolsToAssign) {
-        for (let i = 0; i < tool.quantity; i++) {
-          await assignmentService.create({
-            id_worker: worker.id,
-            id_tool: tool.id,
-            state: tool.state,
-          })
-        }
+        await assignmentService.create({
+          worker_id: Number(worker.id),
+          tool_id: tool.id,
+          assigned_quantity: tool.quantity,
+          state: tool.state,
+          date: new Date().toISOString().split('T')[0],
+        })
       }
       addToast(`Se asignaron ${selectedCount} herramienta(s) correctamente`, 'success')
       refetch()

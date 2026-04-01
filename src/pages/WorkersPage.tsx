@@ -262,6 +262,7 @@ export const WorkersPage = () => {
                           <IconWrench className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => navigate(`/admin/workers/reassign/${worker.id}`)}
                           className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
                           title="Reasignar Herramientas"
                         >
