@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { Button, Input, Select, IconSearch, IconEdit, IconTrash, IconUser, IconWrench, IconRefresh } from '../components/atoms'
+import { Button, Input, Select, IconSearch, IconEdit, IconTrash, IconUser, IconWrench, IconRefresh, IconEye } from '../components/atoms'
 import { Modal, ToastContainer } from '../components/organisms'
 import { FormField } from '../components/molecules'
 import { useToastStore } from '../stores/toastStore'
 import { useWorkers, useCreateWorker, useUpdateWorker, useDeleteWorker } from '../hooks/useWorkers'
 import { WORKER_AREAS, type WorkerArea, type CreateWorkerInput, type Worker } from '../types/worker'
 import { validateField, workerValidationRules } from '../schemas/workerSchema'
+import { WorkerDetailsModal } from '../components/workers/WorkerDetailsModal'
 
 type WorkerFormValues = {
   name: string
@@ -26,6 +27,7 @@ export const WorkersPage = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
+  const [detailsWorker, setDetailsWorker] = useState<Worker | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterArea, setFilterArea] = useState<WorkerArea | ''>('')
@@ -255,6 +257,13 @@ export const WorkersPage = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setDetailsWorker(worker)}
+                          className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
+                          title="Ver detalles"
+                        >
+                          <IconEye className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => navigate(`/admin/workers/assign/${worker.id}`)}
                           className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
                           title="Agregar Herramienta"
@@ -356,6 +365,12 @@ export const WorkersPage = () => {
           </FormField>
         </form>
       </Modal>
+
+      <WorkerDetailsModal
+        isOpen={!!detailsWorker}
+        onClose={() => setDetailsWorker(null)}
+        worker={detailsWorker}
+      />
     </div>
   )
 }

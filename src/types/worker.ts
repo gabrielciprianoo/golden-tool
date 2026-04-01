@@ -10,8 +10,8 @@ export const TOOL_STATES = [
 
 export interface Assignment {
   id: number
-  id_worker: string
-  id_tool: number
+  worker_id: string
+  tool_id: number
   assigned_quantity: number
   state: ToolState
   date: string

@@ -13,11 +13,16 @@ export const useAssignmentsByWorker = (workerId: number) => {
     queryKey: ['assignations', 'worker', workerId],
     queryFn: async () => {
       const res = await assignmentService.getByWorker(workerId)
-      const isSuccess = 'success' in res && res.success === true
+
+      console.log("RESPUESTA COMPLETA:", res)
+
+      const isSuccess = res?.data?.success === true
+
       if (!isSuccess) {
-        throw new Error(getErrorMessage(res))
+        throw new Error('Error al obtener asignaciones')
       }
-      return res.data ?? []
+
+      return res.data.data ?? [] // 🔥 ESTA ES LA LÍNEA CLAVE
     },
     enabled: !!workerId,
   })
