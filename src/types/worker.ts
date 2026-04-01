@@ -1,10 +1,10 @@
 export type ToolState = 'nuevo' | 'en_buen_estado' | 'regular' | 'mal_estado' | 'obsoleto'
 
-export const TOOL_STATES: { value: ToolState; label: string }[] = [
+export const TOOL_STATES = [
   { value: 'nuevo', label: 'Nuevo' },
-  { value: 'en_buen_estado', label: 'En buen estado' },
+  { value: 'buen estado', label: 'Buen estado' },
   { value: 'regular', label: 'Regular' },
-  { value: 'mal_estado', label: 'Mal estado' },
+  { value: 'mal estado', label: 'Mal estado' },
   { value: 'obsoleto', label: 'Obsoleto' },
 ]
 
@@ -19,11 +19,12 @@ export interface Assignment {
 }
 
 export interface AssignmentInput {
-  id_worker: string
-  id_tool: number
+  worker_id: number
+  tool_id: number
+  assigned_quantity: number
   state: ToolState
+  date: string 
 }
-
 export type WorkerArea = 'montaje/desmontaje' | 'armado/desarmado'
 
 export interface Worker {

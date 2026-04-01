@@ -3,7 +3,7 @@ import type { Assignment, AssignmentInput } from '../types/worker'
 
 export type { AssignmentInput }
 
-const ENDPOINT = '/assignations'
+const ENDPOINT = '/asignations'
 
 export const assignmentService = {
   getAll: async () => {

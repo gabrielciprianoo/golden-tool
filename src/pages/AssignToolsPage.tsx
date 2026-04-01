@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button } from '../components/atoms'
+import { Button, IconPlus, IconMinus } from '../components/atoms'
 import { ToastContainer } from '../components/organisms'
 import { useTools } from '../hooks/useTools'
 import { useWorkers } from '../hooks/useWorkers'
@@ -15,7 +15,7 @@ interface ToolSelection {
   price: number
   supplier: string
   unassignedQuantity: number
-  selected: boolean
+  quantity: number
   state: ToolState
 }
 
@@ -27,30 +27,24 @@ export const AssignToolsPage = () => {
   const { createAssignment, isCreating } = useCreateAssignment()
   const { addToast } = useToastStore()
 
-  // ✅ FIX: convertir workerId a number
   const worker = workers.find((w) => w.id === Number(workerId))
 
-  // ✅ FIX: tools seguro con ?? []
   const availableTools = useMemo(() => {
-    return (tools ?? [])
-      .filter((t) => t.unassignedQuantity > 0)
-      .map((t) => ({
-        id: Number(t.id),
-        name: t.name,
-        category: t.category,
-        price: Number(t.price ?? 0),
-        supplier: t.supplier,
-        unassignedQuantity: t.unassignedQuantity,
-        selected: false,
-        state: 'nuevo' as ToolState,
-      }))
+    return (tools ?? []).map((t) => ({
+      id: Number(t.id),
+      name: t.name,
+      category: t.category,
+      price: Number(t.price ?? 0),
+      supplier: t.supplier,
+      unassignedQuantity: t.unassignedQuantity,
+      quantity: 0,
+      state: 'nuevo' as ToolState,
+    }))
   }, [tools])
 
-  // 🔥 estado
   const [toolList, setToolList] = useState<ToolSelection[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
-  // ✅ FIX: sincronizar toolList con availableTools
   useEffect(() => {
     setToolList(availableTools)
   }, [availableTools])
@@ -60,11 +54,25 @@ export const AssignToolsPage = () => {
     return toolList.filter((t) => t.name.toLowerCase().includes(term))
   }, [toolList, searchTerm])
 
-  const selectedCount = toolList.filter((t) => t.selected).length
+  const selectedCount = toolList.filter((t) => t.quantity > 0).length
 
-  const handleToggleTool = (id: number) => {
+  const increaseQuantity = (id: number) => {
     setToolList((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, selected: !t.selected } : t))
+      prev.map((t) =>
+        t.id === id && t.quantity < t.unassignedQuantity
+          ? { ...t, quantity: t.quantity + 1 }
+          : t
+      )
+    )
+  }
+
+  const decreaseQuantity = (id: number) => {
+    setToolList((prev) =>
+      prev.map((t) =>
+        t.id === id && t.quantity > 0
+          ? { ...t, quantity: t.quantity - 1 }
+          : t
+      )
     )
   }
 
@@ -74,45 +82,33 @@ export const AssignToolsPage = () => {
     )
   }
 
-  const handleSelectAll = () => {
-    const allSelected = toolList.every((t) => t.selected)
-    setToolList((prev) => prev.map((t) => ({ ...t, selected: !allSelected })))
+const handleSubmit = async () => {
+  const selectedTools = toolList.filter((t) => t.quantity > 0)
+
+  if (selectedTools.length === 0) {
+    addToast('Selecciona al menos una herramienta', 'error')
+    return
   }
 
-  const handleSubmit = async () => {
-    const selectedTools = toolList.filter((t) => t.selected)
-
-    if (selectedTools.length === 0) {
-      addToast('Selecciona al menos una herramienta', 'error')
-      return
+  try {
+    for (const tool of selectedTools) {
+      await createAssignment({
+        worker_id: Number(workerId),
+        tool_id: tool.id,
+        assigned_quantity: tool.quantity,
+        state: tool.state,
+        date: new Date().toISOString().split('T')[0], // 🔥 FIX
+      })
     }
 
-    if (!workerId) {
-      addToast('Error: Trabajador no identificado', 'error')
-      return
-    }
-
-    try {
-      for (const tool of selectedTools) {
-        await createAssignment({
-          id_worker: workerId,
-          id_tool: tool.id,
-          state: tool.state,
-        })
-      }
-
-      addToast('Herramientas asignadas correctamente', 'success')
-      await refetch()
-      navigate('/admin/workers')
-    } catch (error) {
-      console.error(error)
-      addToast('Error al asignar herramientas', 'error')
-    }
+    addToast('Herramientas asignadas correctamente', 'success')
+    await refetch()
+    navigate('/admin/workers')
+  } catch (error) {
+    console.error(error)
+    addToast('Error al asignar herramientas', 'error')
   }
-
-  const categoryLabel = (cat: string) => {
-    return cat === 'normal' ? 'Normal' : 'Refacción'
-  }
+}
 
   const areaLabel = (area: string) => {
     return area === 'montaje/desmontaje'
@@ -125,9 +121,9 @@ export const AssignToolsPage = () => {
       <div className="admin-module">
         <ToastContainer />
         <div className="text-center py-12">
-          <p className="text-[var(--text)]">Trabajador no encontrado</p>
-          <Button className="mt-4" onClick={() => navigate('/admin/workers')}>
-            Volver a Trabajadores
+          <p>Trabajador no encontrado</p>
+          <Button onClick={() => navigate('/admin/workers')}>
+            Volver
           </Button>
         </div>
       </div>
@@ -138,72 +134,92 @@ export const AssignToolsPage = () => {
     <div className="admin-module">
       <ToastContainer />
 
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/admin/workers')}
-          className="mb-4"
-        >
-          ← Volver a Trabajadores
-        </Button>
+      {/* Header */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate('/admin/workers')}
+      >
+        ← Volver
+      </Button>
+
+      {/* Worker */}
+      <div className="p-4 border rounded-lg my-4">
+        <p className="font-bold">
+          {worker.name} {worker.lastname}
+        </p>
+        <p>{areaLabel(worker.area)}</p>
       </div>
 
-      {/* Trabajador */}
-      <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-6 mb-6">
-        <h2 className="text-xl font-bold text-[var(--text-h)] mb-2">
-          Trabajador Seleccionado
-        </h2>
-        <div className="flex flex-wrap gap-4 text-[var(--text)]">
-          <span className="px-3 py-1.5 rounded-md text-sm bg-surface-100 dark:bg-surface-700">
-            {worker.worker_code}
-          </span>
-          <span className="text-[var(--text-h)] font-medium">
-            {worker.name} {worker.lastname}
-          </span>
-          <span className="px-3 py-1.5 rounded-md text-sm bg-surface-100 dark:bg-surface-700">
-            {areaLabel(worker.area)}
-          </span>
-        </div>
-      </div>
+      {/* Search */}
+      <input
+        type="text"
+        placeholder="Buscar herramienta..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-4 w-full p-2 border rounded"
+      />
 
-      {/* Herramientas */}
-      <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-6 mb-6">
-        <div className="flex justify-between mb-4">
-          <input
-            type="text"
-            placeholder="Buscar herramienta..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Tools */}
+      {toolsLoading ? (
+        <p>Cargando...</p>
+      ) : (
+        <div className="space-y-3">
+          {filteredTools.map((tool) => (
+            <div
+              key={tool.id}
+              className={`p-4 rounded-lg border ${
+                tool.quantity > 0
+                  ? 'border-primary-500 bg-primary-50'
+                  : ''
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-semibold">{tool.name}</p>
+                  <p className="text-sm">
+                    ${tool.price.toFixed(2)} •{' '}
+                    {tool.unassignedQuantity === 0 ? (
+                      <span className="text-red-500">Sin stock</span>
+                    ) : (
+                      <span className="text-green-600">
+                        {tool.unassignedQuantity} disponibles
+                      </span>
+                    )}
+                  </p>
+                </div>
 
-          <button onClick={handleSelectAll}>
-            {toolList.every((t) => t.selected)
-              ? 'Deseleccionar todo'
-              : 'Seleccionar todo'}
-          </button>
-        </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => decreaseQuantity(tool.id)}
+                    disabled={tool.quantity === 0}
+                    className="p-1 border rounded"
+                  >
+                    <IconMinus className="w-4 h-4" />
+                  </button>
 
-        {toolsLoading ? (
-          <p>Cargando herramientas...</p>
-        ) : filteredTools.length === 0 ? (
-          <p>No hay herramientas disponibles</p>
-        ) : (
-          filteredTools.map((tool) => (
-            <div key={tool.id}>
-              <input
-                type="checkbox"
-                checked={tool.selected}
-                onChange={() => handleToggleTool(tool.id)}
-              />
-              {tool.name} - ${Number(tool.price).toFixed(2)}
+                  <span>{tool.quantity}</span>
 
-              {tool.selected && (
+                  <button
+                    onClick={() => increaseQuantity(tool.id)}
+                    disabled={
+                      tool.quantity === tool.unassignedQuantity ||
+                      tool.unassignedQuantity === 0
+                    }
+                    className="p-1 border rounded"
+                  >
+                    <IconPlus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {tool.quantity > 0 && (
                 <select
                   value={tool.state}
                   onChange={(e) =>
                     handleStateChange(tool.id, e.target.value as ToolState)
                   }
+                  className="mt-3 w-full p-2 border rounded"
                 >
                   {TOOL_STATES.map((s) => (
                     <option key={s.value} value={s.value}>
@@ -213,12 +229,12 @@ export const AssignToolsPage = () => {
                 </select>
               )}
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Botones */}
-      <div className="flex justify-end gap-4">
+      {/* Actions */}
+      <div className="flex justify-end mt-6 gap-3">
         <Button onClick={() => navigate('/admin/workers')}>
           Cancelar
         </Button>
