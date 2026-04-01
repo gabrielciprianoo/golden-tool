@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Modal } from '../organisms'
 import { Button } from '../atoms'
 import { useTools } from '../../hooks/useTools'
@@ -45,7 +45,7 @@ export const AssignToolModal = ({ isOpen, onClose, worker }: AssignToolModalProp
   const [toolList, setToolList] = useState<ToolSelection[]>(availableTools)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useMemo(() => {
+  useEffect(() => {
     setToolList(availableTools)
   }, [availableTools, isOpen])
 
