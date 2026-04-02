@@ -18,7 +18,7 @@ interface ToolSelection {
   supplier: string
   unassignedQuantity: number
   quantity: number
-  state: ToolState
+  states: ToolState[]
 }
 
 export const AssignToolsPage = () => {
@@ -44,7 +44,7 @@ export const AssignToolsPage = () => {
       supplier: t.supplier,
       unassignedQuantity: t.unassignedQuantity,
       quantity: 0,
-      state: 'nuevo' as ToolState,
+      states: [],
     }))
   }, [tools])
 
@@ -71,7 +71,7 @@ export const AssignToolsPage = () => {
     setToolList((prev) =>
       prev.map((t) =>
         t.id === id && t.quantity < t.unassignedQuantity
-          ? { ...t, quantity: t.quantity + 1 }
+          ? { ...t, quantity: t.quantity + 1, states: [...t.states, 'nuevo'] }
           : t
       )
     )
@@ -81,15 +81,20 @@ export const AssignToolsPage = () => {
     setToolList((prev) =>
       prev.map((t) =>
         t.id === id && t.quantity > 0
-          ? { ...t, quantity: t.quantity - 1 }
+          ? { ...t, quantity: t.quantity - 1, states: t.states.slice(0, -1) }
           : t
       )
     )
   }
 
-  const handleStateChange = (id: number, state: ToolState) => {
+  const handleStateChange = (id: number, index: number, state: ToolState) => {
     setToolList((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, state } : t))
+      prev.map((t) => {
+        if (t.id !== id) return t
+        const newStates = [...t.states]
+        newStates[index] = state
+        return { ...t, states: newStates }
+      })
     )
   }
 
@@ -102,15 +107,19 @@ export const AssignToolsPage = () => {
     try {
       const today = new Date().toISOString().split('T')[0]
       
+      const assignments = selectedTools.flatMap((tool) =>
+        tool.states.map((state) => ({
+          worker_id: Number(workerId),
+          tool_id: tool.id,
+          assigned_quantity: 1,
+          state,
+          date: today,
+        }))
+      )
+      
       await Promise.all(
-        selectedTools.map((tool) =>
-          createAssignment({
-            worker_id: Number(workerId),
-            tool_id: tool.id,
-            assigned_quantity: tool.quantity,
-            state: tool.state,
-            date: today,
-          })
+        assignments.map((assignment) =>
+          createAssignment(assignment)
         )
       )
 
@@ -298,19 +307,24 @@ export const AssignToolsPage = () => {
                       </td>
                       <td className="px-6 py-4">
                         {tool.quantity > 0 ? (
-                          <select
-                            value={tool.state}
-                            onChange={(e) =>
-                              handleStateChange(tool.id, e.target.value as ToolState)
-                            }
-                            className="px-3 py-2 rounded-lg border border-[var(--input-border)] bg-white text-sm text-[var(--text-h)] focus:outline-none focus:ring-2 focus:border-primary-500 focus:ring-primary-500/20"
-                          >
-                            {TOOL_STATES.map((s) => (
-                              <option key={s.value} value={s.value}>
-                                {s.label}
-                              </option>
+                          <div className="flex flex-wrap gap-1">
+                            {tool.states.map((state, idx) => (
+                              <select
+                                key={idx}
+                                value={state}
+                                onChange={(e) =>
+                                  handleStateChange(tool.id, idx, e.target.value as ToolState)
+                                }
+                                className="px-2 py-1 rounded border border-[var(--input-border)] bg-white text-xs text-[var(--text-h)] focus:outline-none focus:ring-1 focus:border-primary-500"
+                              >
+                                {TOOL_STATES.map((s) => (
+                                  <option key={s.value} value={s.value}>
+                                    {s.label}
+                                  </option>
+                                ))}
+                              </select>
                             ))}
-                          </select>
+                          </div>
                         ) : (
                           <span className="text-[var(--text)] text-sm">-</span>
                         )}
