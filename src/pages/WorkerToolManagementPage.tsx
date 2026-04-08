@@ -39,7 +39,6 @@ export const WorkerToolManagementPage = () => {
   const worker = workers.find((w) => w.id === Number(workerId))
   
   const [selectedToolsState, setSelectedToolsState] = useState<Record<number, { quantity: number; states: ToolState[] }>>({})
-  const [removeQty, setRemoveQty] = useState<Record<number, number>>({})
 
   const toolList = useMemo((): ToolSelection[] => {
     return (tools ?? []).map((t) => ({
@@ -152,25 +151,6 @@ export const WorkerToolManagementPage = () => {
         })
       } else {
         await deleteAssignment(assignment.id)
-      }
-      addToast('Cantidad actualizada', 'success')
-      await refetchAssignments()
-    } catch {
-      addToast('Error al actualizar', 'error')
-    }
-  }
-
-  const handleRemoveQuantity = async (assignment: AssignmentWithTool) => {
-    const qty = removeQty[assignment.id] || 1
-
-    try {
-      if (qty >= assignment.assigned_quantity) {
-        await deleteAssignment(assignment.id)
-      } else {
-        await updateAssignment({
-          id: assignment.id,
-          data: { assigned_quantity: assignment.assigned_quantity - qty },
-        })
       }
       addToast('Cantidad actualizada', 'success')
       await refetchAssignments()
@@ -364,28 +344,6 @@ export const WorkerToolManagementPage = () => {
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center justify-end gap-1">
-                            <input
-                              type="number"
-                              min={1}
-                              max={assignment.assigned_quantity}
-                              value={removeQty[assignment.id] || 1}
-                              onChange={(e) =>
-                                setRemoveQty((prev) => ({
-                                  ...prev,
-                                  [assignment.id]: Number(e.target.value),
-                                }))
-                              }
-                              className="w-12 px-1 py-1 text-center rounded border border-[var(--input-border)] bg-white text-xs text-[var(--text-h)] focus:outline-none focus:ring-1 focus:border-primary-500"
-                            />
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleRemoveQuantity(assignment)}
-                              disabled={isPending}
-                              className="text-xs px-2"
-                            >
-                              -
-                            </Button>
                             <Button
                               size="sm"
                               variant="ghost"
