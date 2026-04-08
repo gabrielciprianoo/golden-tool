@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MainLayout, AdminLayout } from './components/templates'
 import { HeroSection } from './components/organisms'
-import { LoginPage, AdminPage, WorkersPage, InventoryPage, ReviewsPage, AssignToolsPage, ReassignToolsPage, WorkerToolManagementPage } from './pages'
+import { LoginPage, AdminPage, WorkersPage, InventoryPage, ReviewsPage, WorkerToolManagementPage } from './pages'
 import { useAuthStore } from './stores/authStore'
 
 const queryClient = new QueryClient({
@@ -60,8 +60,6 @@ function App() {
         >
           <Route index element={<AdminPage />} />
           <Route path="workers" element={<WorkersPage />} />
-          <Route path="workers/assign/:workerId" element={<AssignToolsPage />} />
-          <Route path="workers/reassign/:workerId" element={<ReassignToolsPage />} />
           <Route path="workers/manage/:workerId" element={<WorkerToolManagementPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="reviews" element={<ReviewsPage />} />
