@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, IconPlus, IconMinus, IconSearch, IconPackage, IconUser, IconCheck, IconTrash } from '../components/atoms'
 import { ToastContainer } from '../components/organisms'
@@ -13,9 +13,6 @@ import { formatAreaLabel, getStockStyle } from '../utils/toolUtils'
 interface ToolSelection {
   id: number
   name: string
-  category: string
-  price: number
-  supplier: string
   unassignedQuantity: number
   quantity: number
   states: ToolState[]
@@ -41,24 +38,18 @@ export const WorkerToolManagementPage = () => {
 
   const worker = workers.find((w) => w.id === Number(workerId))
   
-  const [toolList, setToolList] = useState<ToolSelection[]>([])
+  const [selectedToolsState, setSelectedToolsState] = useState<Record<number, { quantity: number; states: ToolState[] }>>({})
   const [removeQty, setRemoveQty] = useState<Record<number, number>>({})
 
-  useEffect(() => {
-    if (tools && tools.length > 0) {
-      const availableTools: ToolSelection[] = tools.map((t) => ({
-        id: Number(t.id),
-        name: t.name,
-        category: t.category,
-        price: Number(t.price ?? 0),
-        supplier: t.supplier,
-        unassignedQuantity: t.unassignedQuantity,
-        quantity: 0,
-        states: [],
-      }))
-      setToolList(availableTools)
-    }
-  }, [tools])
+  const toolList = useMemo((): ToolSelection[] => {
+    return (tools ?? []).map((t) => ({
+      id: Number(t.id),
+      name: t.name,
+      unassignedQuantity: t.unassignedQuantity,
+      quantity: selectedToolsState[Number(t.id)]?.quantity ?? 0,
+      states: selectedToolsState[Number(t.id)]?.states ?? [],
+    }))
+  }, [tools, selectedToolsState])
 
   const filteredAvailableTools = useMemo(() => {
     const term = debouncedSearchTools.toLowerCase()
@@ -80,34 +71,43 @@ export const WorkerToolManagementPage = () => {
   const isPending = isUpdating || isDeleting || isCreating
 
   const increaseQuantity = (id: number) => {
-    setToolList((prev) =>
-      prev.map((t) =>
-        t.id === id && t.quantity < t.unassignedQuantity
-          ? { ...t, quantity: t.quantity + 1, states: [...t.states, 'nuevo'] }
-          : t
-      )
-    )
+    setSelectedToolsState((prev) => {
+      const current = prev[id] || { quantity: 0, states: [] }
+      return {
+        ...prev,
+        [id]: {
+          quantity: current.quantity + 1,
+          states: [...current.states, 'nuevo'],
+        },
+      }
+    })
   }
 
   const decreaseQuantity = (id: number) => {
-    setToolList((prev) =>
-      prev.map((t) =>
-        t.id === id && t.quantity > 0
-          ? { ...t, quantity: t.quantity - 1, states: t.states.slice(0, -1) }
-          : t
-      )
-    )
+    setSelectedToolsState((prev) => {
+      const current = prev[id]
+      if (!current || current.quantity === 0) return prev
+      return {
+        ...prev,
+        [id]: {
+          quantity: current.quantity - 1,
+          states: current.states.slice(0, -1),
+        },
+      }
+    })
   }
 
   const handleStateChange = (id: number, index: number, state: ToolState) => {
-    setToolList((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t
-        const newStates = [...t.states]
-        newStates[index] = state
-        return { ...t, states: newStates }
-      })
-    )
+    setSelectedToolsState((prev) => {
+      const current = prev[id]
+      if (!current) return prev
+      const newStates = [...current.states]
+      newStates[index] = state
+      return {
+        ...prev,
+        [id]: { ...current, states: newStates },
+      }
+    })
   }
 
   const handleAssignTools = async () => {
@@ -135,9 +135,7 @@ export const WorkerToolManagementPage = () => {
 
       addToast('Herramientas asignadas correctamente', 'success')
       
-      setToolList((prev) =>
-        prev.map((t) => ({ ...t, quantity: 0, states: [] }))
-      )
+      setSelectedToolsState({})
       
       await refetchAssignments()
     } catch {
