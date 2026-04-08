@@ -264,18 +264,11 @@ export const WorkersPage = () => {
                           <IconEye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => navigate(`/admin/workers/assign/${worker.id}`)}
+                          onClick={() => navigate(`/admin/workers/manage/${worker.id}`)}
                           className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
-                          title="Agregar Herramienta"
+                          title="Gestionar Herramientas"
                         >
                           <IconWrench className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => navigate(`/admin/workers/reassign/${worker.id}`)}
-                          className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
-                          title="Reasignar Herramientas"
-                        >
-                          <IconRefresh className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleOpenModal(worker)}
