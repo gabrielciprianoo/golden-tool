@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, IconPlus, IconMinus, IconSearch, IconPackage, IconUser, IconCheck, IconTrash } from '../components/atoms'
-import { ToastContainer } from '../components/organisms'
+import { ToastContainer, ConfirmDeleteModal } from '../components/organisms'
 import { useTools } from '../hooks/useTools'
 import { useWorkers } from '../hooks/useWorkers'
 import { useAssignmentsByWorker, useCreateAssignment, useUpdateAssignment, useDeleteAssignment } from '../hooks/useAssignments'
@@ -39,6 +39,8 @@ export const WorkerToolManagementPage = () => {
   const worker = workers.find((w) => w.id === Number(workerId))
   
   const [selectedToolsState, setSelectedToolsState] = useState<Record<number, { quantity: number; states: ToolState[] }>>({})
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [deletingAssignment, setDeletingAssignment] = useState<AssignmentWithTool | null>(null)
 
   const toolList = useMemo((): ToolSelection[] => {
     return (tools ?? []).map((t) => ({
@@ -159,14 +161,22 @@ export const WorkerToolManagementPage = () => {
     }
   }
 
-  const handleRemoveAll = async (assignment: AssignmentWithTool) => {
+  const handleRemoveAll = (assignment: AssignmentWithTool) => {
+    setDeletingAssignment(assignment)
+    setIsDeleteModalOpen(true)
+  }
+
+  const confirmDeleteAssignment = async () => {
+    if (!deletingAssignment) return
     try {
-      await deleteAssignment(assignment.id)
+      await deleteAssignment(deletingAssignment.id)
       addToast('Herramienta eliminada', 'success')
       await refetchAssignments()
     } catch {
       addToast('Error al eliminar', 'error')
     }
+    setIsDeleteModalOpen(false)
+    setDeletingAssignment(null)
   }
 
   const handleStateUpdate = async (assignment: AssignmentWithTool, newState: ToolState) => {
@@ -517,6 +527,18 @@ export const WorkerToolManagementPage = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setDeletingAssignment(null)
+        }}
+        onConfirm={confirmDeleteAssignment}
+        itemName={deletingAssignment?.tool?.name || `Herramienta #${deletingAssignment?.tool_id}`}
+        itemType="herramienta asignada"
+        isLoading={isDeleting}
+      />
     </div>
   )
 }
