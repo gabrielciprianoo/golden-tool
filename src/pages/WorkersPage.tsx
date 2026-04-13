@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
-import { Button, Input, Select, IconSearch, IconEdit, IconTrash, IconUser } from '../components/atoms'
-import { Modal, ToastContainer } from '../components/organisms'
+import { useNavigate } from 'react-router-dom'
+import { Button, Input, Select, IconSearch, IconEdit, IconTrash, IconUser, IconWrench, IconEye } from '../components/atoms'
+import { Modal, ToastContainer, ConfirmDeleteModal } from '../components/organisms'
 import { FormField } from '../components/molecules'
 import { useToastStore } from '../stores/toastStore'
 import { useWorkers, useCreateWorker, useUpdateWorker, useDeleteWorker } from '../hooks/useWorkers'
 import { WORKER_AREAS, type WorkerArea, type CreateWorkerInput, type Worker } from '../types/worker'
 import { validateField, workerValidationRules } from '../schemas/workerSchema'
+import { WorkerDetailsModal } from '../components/workers/WorkerDetailsModal'
 
 type WorkerFormValues = {
   name: string
@@ -15,6 +17,7 @@ type WorkerFormValues = {
 }
 
 export const WorkersPage = () => {
+  const navigate = useNavigate()
   const { data: workers = [], isLoading: workersLoading } = useWorkers()
   const createWorkerMutation = useCreateWorker()
   const updateWorkerMutation = useUpdateWorker()
@@ -24,6 +27,9 @@ export const WorkersPage = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
+  const [detailsWorker, setDetailsWorker] = useState<Worker | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [deletingWorker, setDeletingWorker] = useState<Worker | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterArea, setFilterArea] = useState<WorkerArea | ''>('')
@@ -116,16 +122,21 @@ export const WorkersPage = () => {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    const worker = workers.find((w) => w.id === id)
-    if (confirm(`¿Estás seguro de eliminar al trabajador ${worker?.name} ${worker?.lastname}?`)) {
-      try {
-        await deleteWorkerMutation.mutateAsync(id)
-        addToast('Trabajador eliminado correctamente', 'success')
-      } catch {
-        addToast('Error al eliminar trabajador', 'error')
-      }
+  const handleDelete = async () => {
+    if (!deletingWorker) return
+    try {
+      await deleteWorkerMutation.mutateAsync(deletingWorker.id)
+      addToast('Trabajador eliminado correctamente', 'success')
+    } catch {
+      addToast('Error al eliminar trabajador', 'error')
     }
+    setIsDeleteModalOpen(false)
+    setDeletingWorker(null)
+  }
+
+  const openDeleteModal = (worker: Worker) => {
+    setDeletingWorker(worker)
+    setIsDeleteModalOpen(true)
   }
 
   const handleClearFilters = () => {
@@ -253,6 +264,20 @@ export const WorkersPage = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setDetailsWorker(worker)}
+                          className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
+                          title="Ver detalles"
+                        >
+                          <IconEye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/admin/workers/manage/${worker.id}`)}
+                          className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
+                          title="Gestionar Herramientas"
+                        >
+                          <IconWrench className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleOpenModal(worker)}
                           className="p-2 rounded-lg text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors"
                           title="Editar"
@@ -260,7 +285,7 @@ export const WorkersPage = () => {
                           <IconEdit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(worker.id)}
+                          onClick={() => openDeleteModal(worker)}
                           className="p-2 rounded-lg text-[var(--text)] hover:bg-danger-50 hover:text-danger-600 dark:hover:bg-danger-900/20 transition-colors"
                           title="Eliminar"
                         >
@@ -340,6 +365,24 @@ export const WorkersPage = () => {
           </FormField>
         </form>
       </Modal>
+
+      <WorkerDetailsModal
+        isOpen={!!detailsWorker}
+        onClose={() => setDetailsWorker(null)}
+        worker={detailsWorker}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setDeletingWorker(null)
+        }}
+        onConfirm={handleDelete}
+        itemName={deletingWorker ? `${deletingWorker.name} ${deletingWorker.lastname}` : ''}
+        itemType="trabajador"
+        isLoading={deleteWorkerMutation.isPending}
+      />
     </div>
   )
 }

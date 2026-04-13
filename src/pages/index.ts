@@ -1,5 +1,8 @@
 export { LoginPage } from './LoginPage'
 export { AdminPage } from './AdminPage'
 export { WorkersPage } from './WorkersPage'
+export { AssignToolsPage } from './AssignToolsPage'
+export { ReassignToolsPage } from './ReassignToolsPage'
+export { WorkerToolManagementPage } from './WorkerToolManagementPage'
 export { InventoryPage } from './InventoryPage'
 export { ReviewsPage } from './ReviewsPage'
