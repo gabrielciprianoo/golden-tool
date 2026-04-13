@@ -27,7 +27,7 @@ const StatusBadge: React.FC<{ status: ToolStatus }> = ({ status }) => {
     ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
     : 'bg-gray-100 text-gray-600 border-gray-200'
   
-  const labels = status === 'active' ? 'Activo' : 'Inactivo'
+  const labels = status === 'active' ? 'Con garantía' : 'Sin garantía'
 
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${styles}`}>
@@ -115,8 +115,8 @@ export const ToolTable: React.FC<ToolTableProps> = ({
       </div>
 
       <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 relative min-w-0">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text)]">
               <IconSearch />
             </div>
@@ -124,35 +124,37 @@ export const ToolTable: React.FC<ToolTableProps> = ({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar por nombre..."
-              className="pl-10"
+              className="pl-10 w-full"
             />
           </div>
-          <Input
-            value={supplier}
-            onChange={(e) => onSupplierChange(e.target.value)}
-            placeholder="Buscar proveedor..."
-            className="w-full md:w-48"
-          />
-          <Select
-            value={category}
-            onChange={(e) => onCategoryChange(e.target.value as ToolCategory | '')}
-            className="w-full md:w-48"
-          >
-            <option value="">Todas las categorías</option>
-            {categoryOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-          <Select
-            value={status}
-            onChange={(e) => onStatusChange(e.target.value as ToolStatus | '')}
-            className="w-full md:w-40"
-          >
-            <option value="">Todos los estados</option>
-            {statusOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Input
+              value={supplier}
+              onChange={(e) => onSupplierChange(e.target.value)}
+              placeholder="Buscar proveedor..."
+              className="w-full sm:w-40"
+            />
+            <Select
+              value={category}
+              onChange={(e) => onCategoryChange(e.target.value as ToolCategory | '')}
+              className="w-full sm:w-44"
+            >
+              <option value="">Todas las categorías</option>
+              {categoryOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </Select>
+            <Select
+              value={status}
+              onChange={(e) => onStatusChange(e.target.value as ToolStatus | '')}
+              className="w-full sm:w-44"
+            >
+              <option value="">Todas las garantías</option>
+              {statusOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -187,7 +189,7 @@ export const ToolTable: React.FC<ToolTableProps> = ({
                     Fecha de Entrada
                   </th>
                   <th className="text-center text-xs font-semibold text-[var(--text)] uppercase tracking-wider px-4 py-3">
-                    Estado
+                    Garantía
                   </th>
                   <th className="text-right text-xs font-semibold text-[var(--text)] uppercase tracking-wider px-4 py-3">
                     Acciones

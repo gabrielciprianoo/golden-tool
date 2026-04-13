@@ -13,6 +13,7 @@ interface ToolPayload {
   entry_date: string
   quantity: number
   unassigned_quantity: number
+  warranty: string
 }
 
 interface ApiTool {
@@ -24,6 +25,7 @@ interface ApiTool {
   entry_date: string
   quantity: number
   unassigned_quantity: number
+  warranty: string
 }
 
 const mapApiTool = (item: ApiTool): Tool => ({
@@ -35,7 +37,7 @@ const mapApiTool = (item: ApiTool): Tool => ({
   quantity: item.quantity,
   unassignedQuantity: item.unassigned_quantity,
   entryDate: item.entry_date,
-  status: 'active' as ToolStatus,
+  status: (item.warranty === 'con garantia' ? 'active' : 'inactive') as ToolStatus,
 })
 
 const getErrorMessage = (res: unknown): string => {

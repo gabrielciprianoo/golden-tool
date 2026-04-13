@@ -137,7 +137,7 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
           />
         </FormField>
 
-        <FormField label="Estado" htmlFor="status">
+        <FormField label="Garantía" htmlFor="status">
           <Select id="status" {...register('status')}>
             {statusOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>

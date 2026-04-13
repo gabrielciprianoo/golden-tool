@@ -6,6 +6,6 @@ export const categoryOptions: { value: ToolCategory; label: string }[] = [
 ]
 
 export const statusOptions: { value: ToolStatus; label: string }[] = [
-  { value: 'active', label: 'Activo' },
-  { value: 'inactive', label: 'Inactivo' },
+  { value: 'active', label: 'Con garantía' },
+  { value: 'inactive', label: 'Sin garantía' },
 ]
