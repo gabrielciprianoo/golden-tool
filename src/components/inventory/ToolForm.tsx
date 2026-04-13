@@ -50,6 +50,7 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<ToolFormData>({
     defaultValues,
@@ -72,11 +73,19 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
   }, [tool, reset])
 
   const handleFormSubmit = (data: ToolFormData) => {
+    if (tool && Number(data.unassignedQuantity) > Number(data.quantity)) {
+      setError('unassignedQuantity', {
+        type: 'manual',
+        message: 'La cantidad disponible no puede ser mayor que la cantidad total',
+      })
+      return
+    }
+
     const validData = parse(toolSchema, {
       ...data,
       price: Number(data.price),
       quantity: Number(data.quantity),
-      unassignedQuantity: Number(data.unassignedQuantity),
+      unassignedQuantity: tool ? Number(data.unassignedQuantity) : Number(data.quantity),
     })
 
     onSubmit(validData as ToolInput)
@@ -128,14 +137,16 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
           />
         </FormField>
 
-        <FormField label="Cantidad disponible" htmlFor="unassignedQuantity" error={errors.unassignedQuantity?.message}>
-          <Input
-            id="unassignedQuantity"
-            type="number"
-            {...register('unassignedQuantity', { required: 'La cantidad es requerida', valueAsNumber: true })}
-            placeholder="0"
-          />
-        </FormField>
+        {tool && (
+          <FormField label="Cantidad disponible" htmlFor="unassignedQuantity" error={errors.unassignedQuantity?.message}>
+            <Input
+              id="unassignedQuantity"
+              type="number"
+              {...register('unassignedQuantity', { required: 'La cantidad es requerida', valueAsNumber: true })}
+              placeholder="0"
+            />
+          </FormField>
+        )}
 
         <FormField label="Garantía" htmlFor="status">
           <Select id="status" {...register('status')}>
