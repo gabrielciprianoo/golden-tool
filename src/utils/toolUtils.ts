@@ -1,11 +1,12 @@
 import type { WorkerArea } from '../types/worker'
 
 export const TOOL_STATE_STYLES: Record<string, { label: string; className: string }> = {
-  nuevo: { label: 'Nuevo', className: 'bg-blue-100 text-blue-700' },
-  'buen estado': { label: 'Buen estado', className: 'bg-emerald-100 text-emerald-700' },
-  regular: { label: 'Regular', className: 'bg-yellow-100 text-yellow-700' },
-  'mal estado': { label: 'Mal estado', className: 'bg-orange-100 text-orange-700' },
-  obsoleto: { label: 'Obsoleto', className: 'bg-gray-100 text-gray-700' },
+  nuevo:         { label: 'Nuevo',       className: 'bg-blue-500    text-white' },
+  'buen estado': { label: 'Buen estado', className: 'bg-emerald-500 text-white' },
+  regular:       { label: 'Regular',     className: 'bg-amber-600   text-white' },
+  'mal estado':  { label: 'Mal estado',  className: 'bg-orange-500  text-white' },
+  obsoleto:      { label: 'Obsoleto',    className: 'bg-slate-500   text-white' },
+  perdida:       { label: 'Perdida',     className: 'bg-red-500     text-white' },
 }
 
 export const getStateLabel = (state: string): string => {
@@ -13,7 +14,7 @@ export const getStateLabel = (state: string): string => {
 }
 
 export const getStateStyle = (state: string): string => {
-  return TOOL_STATE_STYLES[state]?.className ?? 'bg-surface-100 text-surface-700'
+  return TOOL_STATE_STYLES[state]?.className ?? 'bg-slate-100 text-slate-600'
 }
 
 export const formatAreaLabel = (area: WorkerArea | string): string => {

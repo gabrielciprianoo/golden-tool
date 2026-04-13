@@ -1,8 +1,7 @@
-import { useMemo } from 'react'
+import { useState } from 'react'
 import { Modal } from '../../components/organisms'
 import { useAssignmentsByWorker } from '../../hooks/useAssignments'
-import { useTools } from '../../hooks/useTools'
-import { type Worker, type AssignmentWithTool } from '../../types/worker'
+import { type Worker, type Assignment } from '../../types/worker'
 import { formatAreaLabel, getStateLabel, getStateStyle, formatDate as formatDateUtil } from '../../utils/toolUtils'
 
 interface WorkerDetailsModalProps {
@@ -11,32 +10,38 @@ interface WorkerDetailsModalProps {
   worker: Worker | null
 }
 
+interface ToolGroup {
+  tool_id: number
+  toolName: string
+  assignments: Assignment[]
+}
+
+function groupByTool(assignments: Assignment[]): ToolGroup[] {
+  const map = new Map<number, ToolGroup>()
+  for (const a of assignments) {
+    const existing = map.get(a.tool_id)
+    const toolName = a.tool?.name ?? `Herramienta #${a.tool_id}`
+    if (existing) {
+      existing.assignments.push(a)
+    } else {
+      map.set(a.tool_id, { tool_id: a.tool_id, toolName, assignments: [a] })
+    }
+  }
+  return Array.from(map.values())
+}
+
 export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsModalProps) => {
   const numericWorkerId = worker ? Number(worker.id) : 0
-  const { data: assignments = [], isLoading: assignmentsLoading } = useAssignmentsByWorker(numericWorkerId)
-  const { tools = [], isLoading: toolsLoading } = useTools()
-
-  const toolsMap = useMemo(() => {
-    const map = new Map<number, typeof tools[0]>()
-    tools.forEach((t) => map.set(Number(t.id), t))
-    return map
-  }, [tools])
-
-  const getToolName = (toolId: number): string => {
-    return toolsMap.get(toolId)?.name ?? `Herramienta #${toolId}`
-  }
+  const { data: assignments = [], isLoading } = useAssignmentsByWorker(numericWorkerId)
+  const [expandedToolId, setExpandedToolId] = useState<number | null>(null)
 
   if (!worker) return null
 
-  const isLoading = assignmentsLoading || toolsLoading
+  const groups = groupByTool(assignments as Assignment[])
+  const totalUnits = assignments.length
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Detalles del Trabajador"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Detalles del Trabajador" size="lg">
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -45,9 +50,7 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
           </div>
           <div>
             <p className="text-sm text-[var(--text)]">Área</p>
-            <p className="font-semibold text-[var(--text-h)]">
-              {formatAreaLabel(worker.area)}
-            </p>
+            <p className="font-semibold text-[var(--text-h)]">{formatAreaLabel(worker.area)}</p>
           </div>
           <div>
             <p className="text-sm text-[var(--text)]">Nombre</p>
@@ -61,43 +64,72 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
 
         <div>
           <h4 className="font-semibold text-[var(--text-h)] mb-3">
-            Herramientas Asignadas ({assignments.length})
+            Herramientas Asignadas ({totalUnits} unidad{totalUnits !== 1 ? 'es' : ''} · {groups.length} tipo{groups.length !== 1 ? 's' : ''})
           </h4>
-          
+
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : assignments.length === 0 ? (
+          ) : groups.length === 0 ? (
             <p className="text-[var(--text)] text-sm py-4 text-center">
               Este trabajador no tiene herramientas asignadas
             </p>
           ) : (
-            <div className="overflow-x-auto border border-[var(--border)] rounded-lg">
-              <table className="w-full text-sm">
-                <thead className="bg-[var(--surface-50)] border-b border-[var(--border)]">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium text-[var(--text-h)]">Herramienta</th>
-                    <th className="px-4 py-2 text-center font-medium text-[var(--text-h)]">Cantidad</th>
-                    <th className="px-4 py-2 text-left font-medium text-[var(--text-h)]">Estado</th>
-                    <th className="px-4 py-2 text-left font-medium text-[var(--text-h)]">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(assignments as AssignmentWithTool[]).map((assignment) => (
-                    <tr key={assignment.id} className="border-b border-[var(--border)]">
-                      <td className="px-4 py-2 text-[var(--text-h)]">{getToolName(assignment.tool_id)}</td>
-                      <td className="px-4 py-2 text-center text-[var(--text)]">{assignment.assigned_quantity}</td>
-                      <td className="px-4 py-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStateStyle(assignment.state)}`}>
-                          {getStateLabel(assignment.state)}
+            <div className="border border-[var(--border)] rounded-lg overflow-hidden divide-y divide-[var(--border)]">
+              {groups.map((group) => {
+                const isExpanded = expandedToolId === group.tool_id
+                const count = group.assignments.length
+                const states = [...new Set(group.assignments.map((a) => a.state))]
+                const allSameState = states.length === 1
+
+                return (
+                  <div key={group.tool_id}>
+                    {/* Group header row */}
+                    <button
+                      onClick={() => setExpandedToolId(isExpanded ? null : group.tool_id)}
+                      className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-[var(--accent-bg)] transition-colors"
+                    >
+                      <span className="text-[var(--text)] text-sm w-4 shrink-0 font-mono">
+                        {isExpanded ? '▾' : '▸'}
+                      </span>
+                      <span className="flex-1 font-medium text-[var(--text-h)] text-sm">
+                        {group.toolName}
+                      </span>
+                      <span className="text-xs text-[var(--text)] shrink-0">
+                        {count} unidad{count !== 1 ? 'es' : ''}
+                      </span>
+                      {allSameState && (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium shrink-0 ${getStateStyle(states[0])}`}>
+                          {getStateLabel(states[0])}
                         </span>
-                      </td>
-                      <td className="px-4 py-2 text-[var(--text)]">{formatDateUtil(assignment.date)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      )}
+                      {!allSameState && (
+                        <span className="text-xs text-yellow-600 dark:text-yellow-400 shrink-0">
+                          Estados mixtos
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Accordion: individual units */}
+                    {isExpanded && (
+                      <div className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] divide-y divide-[var(--border)]">
+                        {group.assignments.map((a, i) => (
+                          <div key={a.id} className="flex items-center gap-4 px-4 py-2 pl-9 text-sm">
+                            <span className="text-[var(--text)] w-16 shrink-0">Unidad {i + 1}</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStateStyle(a.state)}`}>
+                              {getStateLabel(a.state)}
+                            </span>
+                            <span className="text-[var(--text)] ml-auto text-xs">
+                              {formatDateUtil(a.date)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
