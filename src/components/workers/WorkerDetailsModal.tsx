@@ -13,6 +13,7 @@ interface WorkerDetailsModalProps {
 interface ToolGroup {
   tool_id: number
   toolName: string
+  supplier: string
   assignments: Assignment[]
 }
 
@@ -21,10 +22,11 @@ function groupByTool(assignments: Assignment[]): ToolGroup[] {
   for (const a of assignments) {
     const existing = map.get(a.tool_id)
     const toolName = a.tool?.name ?? `Herramienta #${a.tool_id}`
+    const supplier = a.tool?.supplier ?? ''
     if (existing) {
       existing.assignments.push(a)
     } else {
-      map.set(a.tool_id, { tool_id: a.tool_id, toolName, assignments: [a] })
+      map.set(a.tool_id, { tool_id: a.tool_id, toolName, supplier, assignments: [a] })
     }
   }
   return Array.from(map.values())
@@ -96,6 +98,11 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
                       <span className="flex-1 font-medium text-[var(--text-h)] text-sm">
                         {group.toolName}
                       </span>
+                      {group.supplier && (
+                        <span className="text-xs text-[var(--text)] shrink-0">
+                          {group.supplier}
+                        </span>
+                      )}
                       <span className="text-xs text-[var(--text)] shrink-0">
                         {count} unidad{count !== 1 ? 'es' : ''}
                       </span>

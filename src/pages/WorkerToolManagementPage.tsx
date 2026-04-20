@@ -13,6 +13,7 @@ import { formatAreaLabel, getStockStyle } from '../utils/toolUtils'
 interface ToolSelection {
   id: number
   name: string
+  supplier: string
   unassignedQuantity: number
   quantity: number
   states: ToolState[]
@@ -46,6 +47,7 @@ export const WorkerToolManagementPage = () => {
     return (tools ?? []).map((t) => ({
       id: Number(t.id),
       name: t.name,
+      supplier: t.supplier,
       unassignedQuantity: t.unassignedQuantity,
       quantity: selectedToolsState[Number(t.id)]?.quantity ?? 0,
       states: selectedToolsState[Number(t.id)]?.states ?? [],
@@ -307,6 +309,7 @@ export const WorkerToolManagementPage = () => {
                   <thead className="bg-[var(--surface-50)] sticky top-0">
                     <tr className="border-b border-[var(--border)]">
                       <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text-h)]">Herramienta</th>
+                      <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Proveedor</th>
                       <th className="text-center px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Cant</th>
                       <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Estado</th>
                       <th className="text-right px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Acciones</th>
@@ -324,6 +327,11 @@ export const WorkerToolManagementPage = () => {
                               {assignment.tool?.name || `Herramienta #${assignment.tool_id}`}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-3 py-3 text-left">
+                          <span className="text-xs text-[var(--text)]">
+                            {assignment.tool?.supplier || '-'}
+                          </span>
                         </td>
                         <td className="px-3 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
@@ -425,6 +433,7 @@ export const WorkerToolManagementPage = () => {
                   <thead className="bg-[var(--surface-50)] sticky top-0">
                     <tr className="border-b border-[var(--border)]">
                       <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text-h)]">Herramienta</th>
+                      <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Proveedor</th>
                       <th className="text-center px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Stock</th>
                       <th className="text-center px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Cant</th>
                       <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Estado</th>
@@ -449,6 +458,9 @@ export const WorkerToolManagementPage = () => {
                               </div>
                               <span className="font-medium text-[var(--text-h)] text-sm truncate max-w-[120px]">{tool.name}</span>
                             </div>
+                          </td>
+                          <td className="px-3 py-3 text-left">
+                            <span className="text-xs text-[var(--text)]">{tool.supplier || '-'}</span>
                           </td>
                           <td className="px-3 py-3 text-center">
                             <span className={`inline-flex items-center gap-1 text-xs font-medium ${stockInfo.className}`}>

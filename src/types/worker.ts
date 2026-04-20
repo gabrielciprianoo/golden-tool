@@ -19,12 +19,14 @@ export interface Assignment {
   updatedAt: string
   tool?: {
     name: string
+    supplier?: string
   }
 }
 
 export interface AssignmentWithTool extends Assignment {
   tool?: {
     name: string
+    supplier?: string
   }
 }
 
