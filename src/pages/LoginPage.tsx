@@ -40,7 +40,10 @@ export const LoginPage = () => {
     clearError()
     if (!validate()) return
     const success = await login(credentials)
-    if (success) navigate('/admin')
+    if (success) {
+      const userType = useAuthStore.getState().user?.type_user
+      navigate(userType === 1 ? '/admin' : '/home')
+    }
   }
 
   const handleChange = (field: keyof LoginFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
