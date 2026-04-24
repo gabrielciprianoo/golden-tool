@@ -12,8 +12,8 @@ interface ToolPayload {
   supplier: string
   entry_date: string
   quantity: number
-  unassigned_quantity: number
   warranty: string
+  unassigned_quantity?: number
 }
 
 interface ApiTool {
