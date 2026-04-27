@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/organisms'
 import { useAssignmentsByWorker } from '../../hooks/useAssignments'
+import { useAvailableTools } from '../../hooks/useAvailableTools'
 import { type Worker, type Assignment } from '../../types/worker'
 import { formatAreaLabel, getStateLabel, getStateStyle, formatDate as formatDateUtil } from '../../utils/toolUtils'
 
@@ -35,12 +36,22 @@ function groupByTool(assignments: Assignment[]): ToolGroup[] {
 export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsModalProps) => {
   const numericWorkerId = worker ? Number(worker.id) : 0
   const { data: assignments = [], isLoading } = useAssignmentsByWorker(numericWorkerId)
+  const { tools } = useAvailableTools()
   const [expandedToolId, setExpandedToolId] = useState<number | null>(null)
 
   if (!worker) return null
 
   const groups = groupByTool(assignments as Assignment[])
   const totalUnits = assignments.length
+
+  const toolPriceMap = new Map<number, number>()
+  tools.forEach((t) => toolPriceMap.set(Number(t.id), t.price))
+
+  const totalCost = assignments.reduce((acc: number, a: Assignment) => acc + (toolPriceMap.get(a.tool_id) || 0), 0)
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalles del Trabajador" size="lg">
@@ -66,7 +77,7 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
 
         <div>
           <h4 className="font-semibold text-[var(--text-h)] mb-3">
-            Herramientas Asignadas ({totalUnits} unidad{totalUnits !== 1 ? 'es' : ''} · {groups.length} tipo{groups.length !== 1 ? 's' : ''})
+            Herramientas Asignadas ({totalUnits} unidad{totalUnits !== 1 ? 'es' : ''} · {groups.length} tipo{groups.length !== 1 ? 's' : ''}) · Total: {formatCurrency(totalCost)}
           </h4>
 
           {isLoading ? (
