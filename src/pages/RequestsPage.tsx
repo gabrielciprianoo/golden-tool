@@ -1,8 +1,18 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Select, IconSearch, IconUser } from '../components/atoms'
 import { ToastContainer } from '../components/organisms'
+import { Modal } from '../components/molecules/Modal'
 import { useWorkers } from '../hooks/useWorkers'
 import { WORKER_AREAS, type WorkerArea } from '../types/worker'
+
+type RequestType = 'PRIMERA_VEZ' | 'SE_ROMPIO' | 'DESGASTE' | 'SE_PERDIO'
+
+const REQUEST_TYPE_OPTIONS = [
+  { value: 'PRIMERA_VEZ', label: 'PRIMERA VEZ' },
+  { value: 'SE_ROMPIO', label: 'SE ROMPIO' },
+  { value: 'DESGASTE', label: 'DESGASTE' },
+  { value: 'SE_PERDIO', label: 'SE PERDIO' },
+]
 
 export const RequestsPage = () => {
   const { data: workers = [], isLoading, error } = useWorkers()
@@ -10,6 +20,9 @@ export const RequestsPage = () => {
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterArea, setFilterArea] = useState<WorkerArea | ''>('')
+  const [selectedWorker, setSelectedWorker] = useState<typeof workers[0] | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [requestType, setRequestType] = useState<RequestType>('' as RequestType)
 
   const filteredWorkers = useMemo(() => {
     const term = searchTerm.toLowerCase().trim()
@@ -34,6 +47,26 @@ export const RequestsPage = () => {
     setSearchInput('')
     setSearchTerm('')
     setFilterArea('')
+  }
+
+  const handleStartRequest = (worker: typeof workers[0]) => {
+    setSelectedWorker(worker)
+    setRequestType('' as RequestType)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedWorker(null)
+    setRequestType('' as RequestType)
+  }
+
+  const formatDate = () => {
+    const now = new Date()
+    const day = String(now.getDate()).padStart(2, '0')
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const year = now.getFullYear()
+    return `${day}/${month}/${year}`
   }
 
   const hasFilters = searchTerm || filterArea
@@ -156,7 +189,7 @@ export const RequestsPage = () => {
                 <Button size="sm" variant="outline" onClick={() => {}}>
                   Solicitudes
                 </Button>
-                <Button size="sm" onClick={() => {}}>
+                <Button size="sm" onClick={() => handleStartRequest(worker)}>
                   Iniciar solicitud
                 </Button>
               </div>
@@ -171,6 +204,47 @@ export const RequestsPage = () => {
           <span className="font-medium text-[var(--text-h)]">{workers.length}</span> trabajadores
         </p>
       </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title="Nueva Solicitud"
+        size="md"
+      >
+        {selectedWorker && (
+          <div className="space-y-6">
+            <div className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] border border-[var(--border)] rounded-lg p-4">
+              <div className="flex flex-col gap-2">
+                <p className="text-lg font-bold text-[var(--text-h)]">
+                  SOLICITUD DE {selectedWorker.name} {selectedWorker.lastname}
+                </p>
+                <p className="text-sm text-[var(--text)]">
+                  NTRABAJADOR: <span className="font-mono font-semibold">{selectedWorker.worker_code}</span>
+                </p>
+                <p className="text-sm text-[var(--text)]">
+                  FECHA: <span className="font-semibold">{formatDate()}</span>
+                </p>
+              </div>
+            </div>
+
+            <Select
+              label="TIPO DE SOLICITUD"
+              options={REQUEST_TYPE_OPTIONS}
+              value={requestType}
+              onChange={(e) => setRequestType(e.target.value as RequestType)}
+            />
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="outline" onClick={handleCloseModal}>
+                Cancelar
+              </Button>
+              <Button onClick={() => {}}>
+                Crear Solicitud
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
