@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Button, Select, IconSearch, IconUser } from '../components/atoms'
+import { Button, Input, Select, IconSearch, IconUser } from '../components/atoms'
 import { ToastContainer } from '../components/organisms'
 import { Modal } from '../components/molecules/Modal'
+import { FormField } from '../components/molecules'
 import { useWorkers } from '../hooks/useWorkers'
 import { WORKER_AREAS, type WorkerArea } from '../types/worker'
 
@@ -23,6 +24,8 @@ export const RequestsPage = () => {
   const [selectedWorker, setSelectedWorker] = useState<typeof workers[0] | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [requestType, setRequestType] = useState<RequestType>('' as RequestType)
+  const [toolDetails, setToolDetails] = useState('')
+  const [preferredBrand, setPreferredBrand] = useState('')
 
   const filteredWorkers = useMemo(() => {
     const term = searchTerm.toLowerCase().trim()
@@ -59,6 +62,8 @@ export const RequestsPage = () => {
     setIsModalOpen(false)
     setSelectedWorker(null)
     setRequestType('' as RequestType)
+    setToolDetails('')
+    setPreferredBrand('')
   }
 
   const formatDate = () => {
@@ -233,6 +238,28 @@ export const RequestsPage = () => {
               value={requestType}
               onChange={(e) => setRequestType(e.target.value as RequestType)}
             />
+
+            {requestType === 'PRIMERA_VEZ' && (
+              <div className="space-y-4">
+                <FormField label="DETALLES DE LA HERRAMIENTA A SOLICITAR" htmlFor="tool-details">
+                  <Input
+                    id="tool-details"
+                    value={toolDetails}
+                    onChange={(e) => setToolDetails(e.target.value)}
+                    placeholder="Describe la herramienta que necesitas..."
+                    required
+                  />
+                </FormField>
+                <FormField label="MARCA PREFERENTE (OPCIONAL)" htmlFor="preferred-brand">
+                  <Input
+                    id="preferred-brand"
+                    value={preferredBrand}
+                    onChange={(e) => setPreferredBrand(e.target.value)}
+                    placeholder="Ej: Makita, Dewalt, Bosch..."
+                  />
+                </FormField>
+              </div>
+            )}
 
             <div className="flex gap-3 justify-end pt-4">
               <Button variant="outline" onClick={handleCloseModal}>
