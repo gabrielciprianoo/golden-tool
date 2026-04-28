@@ -19,6 +19,7 @@ export interface Assignment {
   updatedAt: string
   tool?: {
     name: string
+    supplier?: string
   }
 }
 

@@ -3,9 +3,13 @@ import { Button, Select, IconSearch, IconUser } from '../components/atoms'
 import { ToastContainer } from '../components/organisms'
 import { Modal } from '../components/molecules/Modal'
 import { useWorkers } from '../hooks/useWorkers'
-import { WORKER_AREAS, type WorkerArea } from '../types/worker'
+import { useAssignmentsByWorker } from '../hooks/useAssignments'
+import { WORKER_AREAS, type WorkerArea, type Assignment } from '../types/worker'
+import { formatDate as formatDateUtil } from '../utils/toolUtils'
+import { getStateLabel, getStateStyle } from '../utils/toolUtils'
 
 type RequestType = 'PRIMERA_VEZ' | 'SE_ROMPIO' | 'DESGASTE' | 'SE_PERDIO'
+type ModalStep = 'type' | 'tool'
 
 const REQUEST_TYPE_OPTIONS = [
   { value: 'PRIMERA_VEZ', label: 'PRIMERA VEZ' },
@@ -23,6 +27,13 @@ export const RequestsPage = () => {
   const [selectedWorker, setSelectedWorker] = useState<typeof workers[0] | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [requestType, setRequestType] = useState<RequestType>('' as RequestType)
+  const [modalStep, setModalStep] = useState<ModalStep>('type')
+  const [selectedTool, setSelectedTool] = useState<Assignment | null>(null)
+
+  const numericWorkerId = selectedWorker ? Number(selectedWorker.id) : 0
+  const { data: workerAssignments = [], isLoading: loadingAssignments } = useAssignmentsByWorker(numericWorkerId)
+
+  const REQUIRES_TOOL = ['SE_ROMPIO', 'DESGASTE', 'SE_PERDIO'].includes(requestType)
 
   const filteredWorkers = useMemo(() => {
     const term = searchTerm.toLowerCase().trim()
@@ -52,6 +63,8 @@ export const RequestsPage = () => {
   const handleStartRequest = (worker: typeof workers[0]) => {
     setSelectedWorker(worker)
     setRequestType('' as RequestType)
+    setModalStep('type')
+    setSelectedTool(null)
     setIsModalOpen(true)
   }
 
@@ -59,6 +72,19 @@ export const RequestsPage = () => {
     setIsModalOpen(false)
     setSelectedWorker(null)
     setRequestType('' as RequestType)
+    setModalStep('type')
+    setSelectedTool(null)
+  }
+
+  const handleRequestTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = e.target.value as RequestType
+    setRequestType(newType)
+    setSelectedTool(null)
+    if (newType && REQUIRES_TOOL) {
+      setModalStep('tool')
+    } else {
+      setModalStep('type')
+    }
   }
 
   const formatDate = () => {
@@ -209,7 +235,7 @@ export const RequestsPage = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         title="Nueva Solicitud"
-        size="md"
+        size="lg"
       >
         {selectedWorker && (
           <div className="space-y-6">
@@ -227,21 +253,115 @@ export const RequestsPage = () => {
               </div>
             </div>
 
-            <Select
-              label="TIPO DE SOLICITUD"
-              options={REQUEST_TYPE_OPTIONS}
-              value={requestType}
-              onChange={(e) => setRequestType(e.target.value as RequestType)}
-            />
+            {modalStep === 'type' && (
+              <>
+                <Select
+                  label="TIPO DE SOLICITUD"
+                  options={REQUEST_TYPE_OPTIONS}
+                  value={requestType}
+                  onChange={handleRequestTypeChange}
+                />
 
-            <div className="flex gap-3 justify-end pt-4">
-              <Button variant="outline" onClick={handleCloseModal}>
-                Cancelar
-              </Button>
-              <Button onClick={() => {}}>
-                Crear Solicitud
-              </Button>
-            </div>
+                <div className="flex gap-3 justify-end pt-4">
+                  <Button variant="outline" onClick={handleCloseModal}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (REQUIRES_TOOL) {
+                        setModalStep('tool')
+                      }
+                    }}
+                    disabled={!requestType || (REQUIRES_TOOL && workerAssignments.length === 0)}
+                  >
+                    {REQUIRES_TOOL ? 'Seleccionar herramienta' : 'Crear Solicitud'}
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {modalStep === 'tool' && (
+              <>
+                <div className="mb-4">
+                  <button
+                    onClick={() => setModalStep('type')}
+                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+                  >
+                    ← Volver al tipo de solicitud
+                  </button>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-[var(--text-h)] mb-3">
+                    Selecciona la herramienta a reemplazar
+                  </h4>
+
+                  {loadingAssignments ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : workerAssignments.length === 0 ? (
+                    <p className="text-[var(--text)] text-sm py-4 text-center">
+                      Este trabajador no tiene herramientas asignadas
+                    </p>
+                  ) : (
+                    <div className="border border-[var(--border)] rounded-lg overflow-hidden divide-y divide-[var(--border)] max-h-80 overflow-y-auto">
+                      {workerAssignments.map((assignment) => {
+                        const isSelected = selectedTool?.id === assignment.id
+                        return (
+                          <button
+                            key={assignment.id}
+                            onClick={() => setSelectedTool(assignment)}
+                            className={`w-full flex items-center gap-4 px-4 py-3 text-left transition-colors ${
+                              isSelected
+                                ? 'bg-primary-50 dark:bg-primary-900/20 border-l-2 border-l-primary-500'
+                                : 'hover:bg-[var(--accent-bg)] border-l-2 border-l-transparent'
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-[var(--text-h)] text-sm truncate">
+                                {assignment.tool?.name ?? `Herramienta #${assignment.tool_id}`}
+                              </p>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-xs text-[var(--text)]">
+                                  Cantidad: {assignment.assigned_quantity}
+                                </span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStateStyle(assignment.state)}`}>
+                                  {getStateLabel(assignment.state)}
+                                </span>
+                                <span className="text-xs text-[var(--text)]">
+                                  {formatDateUtil(assignment.date)}
+                                </span>
+                                {assignment.tool?.supplier && (
+                                  <span className="text-xs text-[var(--text)]">
+                                    Proveedor: {assignment.tool.supplier}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <span className="text-primary-600 dark:text-primary-400">✓</span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 justify-end pt-4">
+                  <Button variant="outline" onClick={handleCloseModal}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => {}}
+                    disabled={!selectedTool}
+                  >
+                    Crear Solicitud
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </Modal>
