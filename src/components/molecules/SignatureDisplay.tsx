@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import SignatureCanvas from 'react-signature-canvas'
+import SignatureCanvas from  'react-signature-canvas'
 
 interface SignatureDisplayProps {
   signature: string

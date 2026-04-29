@@ -2,6 +2,7 @@ import { post } from './apiClient'
 
 export interface CreateRequestInput {
   worker_id: number
+  tool_id?: number
   type_request: 'PRIMERA_VEZ' | 'SE_ROMPIO' | 'DESGASTE' | 'SE_PERDIO'
   details_tool: string
   preferred_brand?: string

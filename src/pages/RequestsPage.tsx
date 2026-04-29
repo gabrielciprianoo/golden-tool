@@ -6,6 +6,7 @@ import { FormField } from '../components/molecules'
 import { SignatureModal } from '../components/molecules/SignatureModal'
 import { SignatureDisplay } from '../components/molecules/SignatureDisplay'
 import { useWorkers } from '../hooks/useWorkers'
+import { useAssignmentsByWorker } from '../hooks/useAssignments'
 import { useCreateRequest } from '../hooks/useRequests'
 import { WORKER_AREAS, type WorkerArea } from '../types/worker'
 
@@ -21,6 +22,8 @@ const REQUEST_TYPE_OPTIONS = [
 export const RequestsPage = () => {
   const { data: workers = [], isLoading, error } = useWorkers()
   const createRequest = useCreateRequest()
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null)
+  const { data: workerAssignments = [] } = useAssignmentsByWorker(selectedWorkerId ?? 0)
   
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -28,6 +31,7 @@ export const RequestsPage = () => {
   const [selectedWorker, setSelectedWorker] = useState<typeof workers[0] | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [requestType, setRequestType] = useState<RequestType>('' as RequestType)
+  const [selectedToolId, setSelectedToolId] = useState<number | ''>('')
   const [toolDetails, setToolDetails] = useState('')
   const [preferredBrand, setPreferredBrand] = useState('')
   const [showSignatureSection, setShowSignatureSection] = useState(false)
@@ -62,14 +66,18 @@ export const RequestsPage = () => {
 
   const handleStartRequest = (worker: typeof workers[0]) => {
     setSelectedWorker(worker)
+    setSelectedWorkerId(Number(worker.id))
     setRequestType('' as RequestType)
+    setSelectedToolId('')
     setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setSelectedWorker(null)
+    setSelectedWorkerId(null)
     setRequestType('' as RequestType)
+    setSelectedToolId('')
     setToolDetails('')
     setPreferredBrand('')
     setShowSignatureSection(false)
@@ -81,6 +89,11 @@ export const RequestsPage = () => {
   const handleCreateRequest = () => {
     if (!requestType) {
       alert('Por favor selecciona un tipo de solicitud')
+      return
+    }
+    const needsTool = ['SE_ROMPIO', 'DESGASTE', 'SE_PERDIO'].includes(requestType)
+    if (needsTool && !selectedToolId) {
+      alert('Por favor selecciona la herramienta')
       return
     }
     if (!toolDetails) {
@@ -101,9 +114,12 @@ export const RequestsPage = () => {
     }
     if (!selectedWorker) return
 
+    const needsTool = ['SE_ROMPIO', 'DESGASTE', 'SE_PERDIO'].includes(requestType)
+
     try {
       const result = await createRequest.mutateAsync({
         worker_id: Number(selectedWorker.id),
+        tool_id: needsTool ? Number(selectedToolId) : undefined,
         type_request: requestType,
         details_tool: toolDetails,
         preferred_brand: preferredBrand || undefined,
@@ -306,11 +322,28 @@ export const RequestsPage = () => {
               label="TIPO DE SOLICITUD"
               options={REQUEST_TYPE_OPTIONS}
               value={requestType}
-              onChange={(e) => setRequestType(e.target.value as RequestType)}
+              onChange={(e) => {
+                setRequestType(e.target.value as RequestType)
+                setSelectedToolId('')
+              }}
             />
 
             {requestType && (
               <div className="space-y-4">
+                {['SE_ROMPIO', 'DESGASTE', 'SE_PERDIO'].includes(requestType) && (
+                  <Select
+                    label="HERRAMIENTA"
+                    options={[
+                      { value: '', label: 'Selecciona una herramienta...' },
+                      ...workerAssignments.map((a) => ({
+                        value: String(a.tool_id),
+                        label: a.tool?.name ?? `Herramienta #${a.tool_id}`,
+                      })),
+                    ]}
+                    value={selectedToolId}
+                    onChange={(e) => setSelectedToolId(e.target.value as unknown as number)}
+                  />
+                )}
                 <FormField label="DETALLES DE LA HERRAMIENTA A SOLICITAR" htmlFor="tool-details">
                   <Input
                     id="tool-details"
