@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Modal } from '../../components/organisms'
 import { SignatureModal } from '../../components/molecules/SignatureModal'
+import { SignatureDisplay } from '../../components/molecules/SignatureDisplay'
+import { Button } from '../atoms'
 import { useRequestsByWorker, useUpdateRequest } from '../../hooks/useRequests'
 import { type Worker } from '../../types/worker'
 import { type RequestData } from '../../services/requestService'
@@ -58,6 +60,13 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
   const [signatureModalOpen, setSignatureModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<RequestData | null>(null)
   const [signatureType, setSignatureType] = useState<'applicant' | 'authorization' | null>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedDetailRequest, setSelectedDetailRequest] = useState<RequestData | null>(null)
+
+  const handleOpenDetail = (req: RequestData) => {
+    setSelectedDetailRequest(req)
+    setDetailModalOpen(true)
+  }
 
   if (!worker) return null
 
@@ -97,9 +106,14 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
     const stateInfo = stateLabels[req.state] || { label: req.state, className: 'bg-gray-100 text-gray-800' }
     const missing = getMissingSignatures(req)
     const showCompleteButton = canCompleteSignatures(req)
+    const isCompleted = ['finalizado', 'aprobado', 'rechazado'].includes(req.state)
     
     return (
-      <div key={req.id} className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] rounded-lg p-4 border border-[var(--border)]">
+      <div 
+        key={req.id} 
+        className={`bg-[var(--surface-50)] dark:bg-[var(--surface-800)] rounded-lg p-4 border border-[var(--border)] ${isCompleted ? 'cursor-pointer hover:border-primary-400 transition-colors' : ''}`}
+        onClick={() => isCompleted && handleOpenDetail(req)}
+      >
         <div className="flex items-start justify-between mb-2">
           <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[var(--accent-bg)] text-[var(--accent)]">
             {typeRequestLabels[req.type_request] || req.type_request}
@@ -231,6 +245,93 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
         onSave={handleSaveSignature}
         title={signatureType === 'applicant' ? 'Firma del Solicitante' : 'Firma de Autorización'}
       />
+
+      <Modal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false)
+          setSelectedDetailRequest(null)
+        }}
+        title="Detalles de Solicitud"
+        size="lg"
+      >
+        {selectedDetailRequest && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-[var(--text)]">Tipo de Solicitud</p>
+                <p className="font-semibold text-[var(--text-h)]">
+                  {typeRequestLabels[selectedDetailRequest.type_request] || selectedDetailRequest.type_request}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-[var(--text)]">Estado</p>
+                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${stateLabels[selectedDetailRequest.state]?.className || 'bg-gray-100 text-gray-800'}`}>
+                  {stateLabels[selectedDetailRequest.state]?.label || selectedDetailRequest.state}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm text-[var(--text)]">Detalles de la Herramienta</p>
+              <p className="text-[var(--text-h)]">{selectedDetailRequest.details_tool}</p>
+            </div>
+
+            {selectedDetailRequest.preferred_brand && (
+              <div>
+                <p className="text-sm text-[var(--text)]">Marca Preferida</p>
+                <p className="text-[var(--text-h)]">{selectedDetailRequest.preferred_brand}</p>
+              </div>
+            )}
+
+            {selectedDetailRequest.tool && (
+              <div>
+                <p className="text-sm text-[var(--text)]">Herramienta</p>
+                <p className="text-[var(--text-h)]">{selectedDetailRequest.tool.name}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-[var(--text)] mb-2">Firma del Solicitante</p>
+                {selectedDetailRequest.signa_applicant ? (
+                  <SignatureDisplay signature={selectedDetailRequest.signa_applicant} />
+                ) : (
+                  <p className="text-[var(--text)] italic">Sin firma</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-[var(--text)] mb-2">Firma de Autorización</p>
+                {selectedDetailRequest.signa_authorization ? (
+                  <SignatureDisplay signature={selectedDetailRequest.signa_authorization} />
+                ) : (
+                  <p className="text-[var(--text)] italic">Sin firma</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border)]">
+              <div>
+                <p className="text-sm text-[var(--text)]">Fecha de Creación</p>
+                <p className="text-[var(--text-h)]">{formatDate(selectedDetailRequest.created_at)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-[var(--text)]">Última Actualización</p>
+                <p className="text-[var(--text-h)]">{formatDate(selectedDetailRequest.updated_at)}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button onClick={() => {
+                setDetailModalOpen(false)
+                setSelectedDetailRequest(null)
+              }}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   )
 }
