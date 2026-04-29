@@ -239,7 +239,7 @@ export const RequestsPage = () => {
               onChange={(e) => setRequestType(e.target.value as RequestType)}
             />
 
-            {requestType === 'PRIMERA_VEZ' && (
+            {requestType && (
               <div className="space-y-4">
                 <FormField label="DETALLES DE LA HERRAMIENTA A SOLICITAR" htmlFor="tool-details">
                   <Input
