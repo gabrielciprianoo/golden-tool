@@ -1,4 +1,4 @@
-import { post, get } from './apiClient'
+import { post, get, patch } from './apiClient'
 
 export interface CreateRequestInput {
   worker_id: number
@@ -28,11 +28,19 @@ export interface RequestData {
   }
 }
 
+export interface UpdateRequestInput {
+  signa_applicant?: string
+  signa_authorization?: string
+}
+
 export const requestService = {
   create: async (data: CreateRequestInput) => {
     return post<{ success: boolean; data: unknown; message: string }>('/requests', data)
   },
   getByWorker: async (workerId: number) => {
     return get<{ success: boolean; data: RequestData[] }>(`/requests/worker/${workerId}`)
+  },
+  update: async (id: number, data: UpdateRequestInput) => {
+    return patch<{ success: boolean; data: RequestData; message: string }>(`/requests/${id}`, data)
   },
 }

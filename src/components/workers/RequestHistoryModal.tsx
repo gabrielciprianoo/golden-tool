@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Modal } from '../../components/organisms'
-import { useRequestsByWorker } from '../../hooks/useRequests'
+import { SignatureModal } from '../../components/molecules/SignatureModal'
+import { useRequestsByWorker, useUpdateRequest } from '../../hooks/useRequests'
 import { type Worker } from '../../types/worker'
 import { type RequestData } from '../../services/requestService'
 import { formatAreaLabel } from '../../utils/toolUtils'
@@ -36,9 +38,25 @@ function formatDate(dateString: string): string {
   })
 }
 
+function canCompleteSignatures(req: RequestData): boolean {
+  return req.state === 'pendiente' || req.state === 'en_proceso'
+}
+
+function getMissingSignatures(req: RequestData): { applicant: boolean; authorization: boolean } {
+  return {
+    applicant: !req.signa_applicant,
+    authorization: !req.signa_authorization,
+  }
+}
+
 export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryModalProps) => {
   const numericWorkerId = worker ? Number(worker.id) : 0
   const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId)
+  const updateRequest = useUpdateRequest()
+  
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false)
+  const [selectedRequest, setSelectedRequest] = useState<RequestData | null>(null)
+  const [signatureType, setSignatureType] = useState<'applicant' | 'authorization' | null>(null)
 
   if (!worker) return null
 
@@ -47,8 +65,36 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
   const inProgressRequests = requestsArray.filter(r => r.state === 'en_proceso')
   const completedRequests = requestsArray.filter(r => ['finalizado', 'aprobado', 'rechazado'].includes(r.state))
 
+  const handleOpenSignatureModal = (req: RequestData, type: 'applicant' | 'authorization') => {
+    setSelectedRequest(req)
+    setSignatureType(type)
+    setSignatureModalOpen(true)
+  }
+
+  const handleSaveSignature = async (signature: string) => {
+    if (!selectedRequest || !signatureType) return
+
+    const updateData = signatureType === 'applicant'
+      ? { signa_applicant: signature }
+      : { signa_authorization: signature }
+
+    try {
+      await updateRequest.mutateAsync({
+        id: selectedRequest.id,
+        data: updateData,
+      })
+      setSignatureModalOpen(false)
+      setSelectedRequest(null)
+      setSignatureType(null)
+    } catch (error) {
+      console.error('Error updating request:', error)
+    }
+  }
+
   const renderRequestCard = (req: RequestData) => {
     const stateInfo = stateLabels[req.state] || { label: req.state, className: 'bg-gray-100 text-gray-800' }
+    const missing = getMissingSignatures(req)
+    const showCompleteButton = canCompleteSignatures(req)
     
     return (
       <div key={req.id} className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] rounded-lg p-4 border border-[var(--border)]">
@@ -67,7 +113,41 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
         {req.tool && (
           <p className="text-xs text-[var(--text)] mb-2">Herramienta: {req.tool.name}</p>
         )}
-        <p className="text-xs text-[var(--text)] opacity-70">
+        
+        {showCompleteButton && (
+          <div className="mt-3 pt-3 border-t border-[var(--border)]">
+            <p className="text-xs text-[var(--text)] mb-2 font-medium">Firmas:</p>
+            <div className="flex gap-2">
+              {missing.applicant ? (
+                <button
+                  onClick={() => handleOpenSignatureModal(req, 'applicant')}
+                  className="px-3 py-1.5 text-xs rounded border border-yellow-400 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 transition-colors"
+                >
+                  + Firma Solicitante
+                </button>
+              ) : (
+                <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">
+                  ✓ Firma Solicitante
+                </span>
+              )}
+              
+              {missing.authorization ? (
+                <button
+                  onClick={() => handleOpenSignatureModal(req, 'authorization')}
+                  className="px-3 py-1.5 text-xs rounded border border-yellow-400 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 transition-colors"
+                >
+                  + Firma Autorización
+                </button>
+              ) : (
+                <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">
+                  ✓ Firma Autorización
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        
+        <p className="text-xs text-[var(--text)] opacity-70 mt-2">
           {formatDate(req.created_at)}
         </p>
       </div>
@@ -75,67 +155,80 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Historial de Solicitudes" size="lg">
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--surface-50)] dark:bg-[var(--surface-800)] rounded-lg border border-[var(--border)]">
-          <div>
-            <p className="text-xs text-[var(--text)]">Trabajador</p>
-            <p className="font-semibold text-[var(--text-h)]">{worker.name} {worker.lastname}</p>
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title="Historial de Solicitudes" size="lg">
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--surface-50)] dark:bg-[var(--surface-800)] rounded-lg border border-[var(--border)]">
+            <div>
+              <p className="text-xs text-[var(--text)]">Trabajador</p>
+              <p className="font-semibold text-[var(--text-h)]">{worker.name} {worker.lastname}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--text)]">Área</p>
+              <p className="font-semibold text-[var(--text-h)]">{formatAreaLabel(worker.area)}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-[var(--text)]">Área</p>
-            <p className="font-semibold text-[var(--text-h)]">{formatAreaLabel(worker.area)}</p>
-          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : requestsArray.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-[var(--text)]">Este trabajador no tiene solicitudes</p>
+            </div>
+          ) : (
+            <>
+              {pendingRequests.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    Pendientes ({pendingRequests.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {pendingRequests.map(renderRequestCard)}
+                  </div>
+                </div>
+              )}
+
+              {inProgressRequests.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    En Proceso ({inProgressRequests.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {inProgressRequests.map(renderRequestCard)}
+                  </div>
+                </div>
+              )}
+
+              {completedRequests.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    Finalizados ({completedRequests.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {completedRequests.map(renderRequestCard)}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
+      </Modal>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : requestsArray.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-[var(--text)]">Este trabajador no tiene solicitudes</p>
-          </div>
-        ) : (
-          <>
-            {pendingRequests.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                  Pendientes ({pendingRequests.length})
-                </h4>
-                <div className="space-y-3">
-                  {pendingRequests.map(renderRequestCard)}
-                </div>
-              </div>
-            )}
-
-            {inProgressRequests.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  En Proceso ({inProgressRequests.length})
-                </h4>
-                <div className="space-y-3">
-                  {inProgressRequests.map(renderRequestCard)}
-                </div>
-              </div>
-            )}
-
-            {completedRequests.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  Finalizados ({completedRequests.length})
-                </h4>
-                <div className="space-y-3">
-                  {completedRequests.map(renderRequestCard)}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </Modal>
+      <SignatureModal
+        isOpen={signatureModalOpen}
+        onClose={() => {
+          setSignatureModalOpen(false)
+          setSelectedRequest(null)
+          setSignatureType(null)
+        }}
+        onSave={handleSaveSignature}
+        title={signatureType === 'applicant' ? 'Firma del Solicitante' : 'Firma de Autorización'}
+      />
+    </>
   )
 }
