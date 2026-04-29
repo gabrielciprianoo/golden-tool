@@ -51,7 +51,8 @@ function getMissingSignatures(req: RequestData): { applicant: boolean; authoriza
 
 export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryModalProps) => {
   const numericWorkerId = worker ? Number(worker.id) : 0
-  const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId, refreshKey)
   const updateRequest = useUpdateRequest()
   
   const [signatureModalOpen, setSignatureModalOpen] = useState(false)
@@ -86,6 +87,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
       setSignatureModalOpen(false)
       setSelectedRequest(null)
       setSignatureType(null)
+      setRefreshKey(prev => prev + 1)
     } catch (error) {
       console.error('Error updating request:', error)
     }

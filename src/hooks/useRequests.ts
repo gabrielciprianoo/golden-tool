@@ -17,9 +17,9 @@ export const useCreateRequest = () => {
   })
 }
 
-export const useRequestsByWorker = (workerId: number) => {
+export const useRequestsByWorker = (workerId: number, refreshKey?: number) => {
   return useQuery({
-    queryKey: REQUEST_KEYS.byWorker(workerId),
+    queryKey: [...REQUEST_KEYS.byWorker(workerId), refreshKey ?? 0],
     queryFn: async () => {
       const response = await requestService.getByWorker(workerId)
       if ('error' in response) {
