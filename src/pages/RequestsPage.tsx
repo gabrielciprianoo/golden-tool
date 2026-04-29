@@ -3,7 +3,10 @@ import { Button, Input, Select, IconSearch, IconUser } from '../components/atoms
 import { ToastContainer } from '../components/organisms'
 import { Modal } from '../components/molecules/Modal'
 import { FormField } from '../components/molecules'
+import { SignatureModal } from '../components/molecules/SignatureModal'
+import { SignatureDisplay } from '../components/molecules/SignatureDisplay'
 import { useWorkers } from '../hooks/useWorkers'
+import { useCreateRequest } from '../hooks/useRequests'
 import { WORKER_AREAS, type WorkerArea } from '../types/worker'
 
 type RequestType = 'PRIMERA_VEZ' | 'SE_ROMPIO' | 'DESGASTE' | 'SE_PERDIO'
@@ -17,6 +20,7 @@ const REQUEST_TYPE_OPTIONS = [
 
 export const RequestsPage = () => {
   const { data: workers = [], isLoading, error } = useWorkers()
+  const createRequest = useCreateRequest()
   
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
@@ -26,6 +30,10 @@ export const RequestsPage = () => {
   const [requestType, setRequestType] = useState<RequestType>('' as RequestType)
   const [toolDetails, setToolDetails] = useState('')
   const [preferredBrand, setPreferredBrand] = useState('')
+  const [showSignatureSection, setShowSignatureSection] = useState(false)
+  const [applicantSignature, setApplicantSignature] = useState('')
+  const [authorizationSignature, setAuthorizationSignature] = useState('')
+  const [signatureModalType, setSignatureModalType] = useState<'applicant' | 'authorization' | null>(null)
 
   const filteredWorkers = useMemo(() => {
     const term = searchTerm.toLowerCase().trim()
@@ -64,6 +72,68 @@ export const RequestsPage = () => {
     setRequestType('' as RequestType)
     setToolDetails('')
     setPreferredBrand('')
+    setShowSignatureSection(false)
+    setApplicantSignature('')
+    setAuthorizationSignature('')
+    setSignatureModalType(null)
+  }
+
+  const handleCreateRequest = () => {
+    if (!requestType) {
+      alert('Por favor selecciona un tipo de solicitud')
+      return
+    }
+    if (!toolDetails) {
+      alert('Por favor ingresa los detalles de la herramienta')
+      return
+    }
+    setShowSignatureSection(true)
+  }
+
+  const handleSaveRequest = async () => {
+    if (!applicantSignature) {
+      alert('Por favor firma como solicitante')
+      return
+    }
+    if (!authorizationSignature) {
+      alert('Por favor firma la autorización')
+      return
+    }
+    if (!selectedWorker) return
+
+    try {
+      const result = await createRequest.mutateAsync({
+        worker_id: Number(selectedWorker.id),
+        type_request: requestType,
+        details_tool: toolDetails,
+        preferred_brand: preferredBrand || undefined,
+        signa_applicant: applicantSignature,
+        signa_authorization: authorizationSignature,
+      })
+
+      if ('success' in result && result.success) {
+        alert('Solicitud creada correctamente!')
+        handleCloseModal()
+      } else {
+        const errorMsg = 'error' in result ? result.error : 'Error desconocido'
+        alert('Error al crear solicitud: ' + errorMsg)
+      }
+    } catch {
+      alert('Error al crear solicitud')
+    }
+  }
+
+  const handleOpenSignatureModal = (type: 'applicant' | 'authorization') => {
+    setSignatureModalType(type)
+  }
+
+  const handleSaveSignature = (signature: string) => {
+    if (signatureModalType === 'applicant') {
+      setApplicantSignature(signature)
+    } else if (signatureModalType === 'authorization') {
+      setAuthorizationSignature(signature)
+    }
+    setSignatureModalType(null)
   }
 
   const formatDate = () => {
@@ -261,17 +331,76 @@ export const RequestsPage = () => {
               </div>
             )}
 
-            <div className="flex gap-3 justify-end pt-4">
-              <Button variant="outline" onClick={handleCloseModal}>
-                Cancelar
-              </Button>
-              <Button onClick={() => {}}>
-                Crear Solicitud
-              </Button>
-            </div>
+            {!showSignatureSection ? (
+              <div className="flex gap-3 justify-end pt-4">
+                <Button variant="outline" onClick={handleCloseModal}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateRequest}>
+                  Crear Solicitud
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--text-h)] mb-2">Firma de solicitante</p>
+                    <div
+                      onClick={() => handleOpenSignatureModal('applicant')}
+                      className="cursor-pointer hover:border-primary-500"
+                    >
+                      {applicantSignature ? (
+                        <SignatureDisplay signature={applicantSignature} />
+                      ) : (
+                        <div className="h-32 border-2 border-dashed border-[var(--border)] rounded-lg bg-white flex items-center justify-center">
+                          <span className="text-[var(--text)] text-sm">Firmar aquí</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-[var(--text-h)] mb-2">Firma de autorización</p>
+                    <div
+                      onClick={() => handleOpenSignatureModal('authorization')}
+                      className="cursor-pointer hover:border-primary-500"
+                    >
+                      {authorizationSignature ? (
+                        <SignatureDisplay signature={authorizationSignature} />
+                      ) : (
+                        <div className="h-32 border-2 border-dashed border-[var(--border)] rounded-lg bg-white flex items-center justify-center">
+                          <span className="text-[var(--text)] text-sm">Firmar aquí</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 justify-end pt-4">
+                  <Button variant="outline" onClick={handleCloseModal}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleSaveRequest}>
+                    Guardar Solicitud
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
+
+      <SignatureModal
+        isOpen={signatureModalType === 'applicant'}
+        onClose={() => setSignatureModalType(null)}
+        onSave={handleSaveSignature}
+        title="Firma del solicitante"
+      />
+
+      <SignatureModal
+        isOpen={signatureModalType === 'authorization'}
+        onClose={() => setSignatureModalType(null)}
+        onSave={handleSaveSignature}
+        title="Firma de autorización"
+      />
     </div>
   )
 }
