@@ -8,7 +8,8 @@ import { SignatureDisplay } from '../components/molecules/SignatureDisplay'
 import { useWorkers } from '../hooks/useWorkers'
 import { useAssignmentsByWorker } from '../hooks/useAssignments'
 import { useCreateRequest } from '../hooks/useRequests'
-import { WORKER_AREAS, type WorkerArea } from '../types/worker'
+import { RequestHistoryModal } from '../components/workers/RequestHistoryModal'
+import { WORKER_AREAS, type WorkerArea, type Worker } from '../types/worker'
 
 type RequestType = 'PRIMERA_VEZ' | 'SE_ROMPIO' | 'DESGASTE' | 'SE_PERDIO'
 
@@ -38,6 +39,8 @@ export const RequestsPage = () => {
   const [applicantSignature, setApplicantSignature] = useState('')
   const [authorizationSignature, setAuthorizationSignature] = useState('')
   const [signatureModalType, setSignatureModalType] = useState<'applicant' | 'authorization' | null>(null)
+  const [showRequestsModal, setShowRequestsModal] = useState(false)
+  const [requestsWorker, setRequestsWorker] = useState<Worker | null>(null)
 
   const filteredWorkers = useMemo(() => {
     const term = searchTerm.toLowerCase().trim()
@@ -269,7 +272,10 @@ export const RequestsPage = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => {}}>
+                <Button size="sm" variant="outline" onClick={() => {
+                  setRequestsWorker(worker)
+                  setShowRequestsModal(true)
+                }}>
                   Solicitudes
                 </Button>
                 <Button size="sm" onClick={() => handleStartRequest(worker)}>
@@ -425,6 +431,15 @@ export const RequestsPage = () => {
         onClose={() => setSignatureModalType(null)}
         onSave={handleSaveSignature}
         title="Firma de autorización"
+      />
+
+      <RequestHistoryModal
+        isOpen={showRequestsModal}
+        onClose={() => {
+          setShowRequestsModal(false)
+          setRequestsWorker(null)
+        }}
+        worker={requestsWorker}
       />
     </div>
   )

@@ -1,0 +1,141 @@
+import { Modal } from '../../components/organisms'
+import { useRequestsByWorker } from '../../hooks/useRequests'
+import { type Worker } from '../../types/worker'
+import { type RequestData } from '../../services/requestService'
+import { formatAreaLabel } from '../../utils/toolUtils'
+
+interface RequestHistoryModalProps {
+  isOpen: boolean
+  onClose: () => void
+  worker: Worker | null
+}
+
+const typeRequestLabels: Record<string, string> = {
+  PRIMERA_VEZ: 'Primera vez',
+  SE_ROMPIO: 'Se rompió',
+  DESGASTE: 'Desgaste',
+  SE_PERDIO: 'Se perdió',
+}
+
+const stateLabels: Record<string, { label: string; className: string }> = {
+  pendiente: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  en_proceso: { label: 'En proceso', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+  finalizado: { label: 'Finalizado', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+  aprobado: { label: 'Aprobado', className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' },
+  rechazado: { label: 'Rechazado', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryModalProps) => {
+  const numericWorkerId = worker ? Number(worker.id) : 0
+  const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId)
+
+  if (!worker) return null
+
+  const requestsArray = Array.isArray(requests) ? requests : []
+  const pendingRequests = requestsArray.filter(r => r.state === 'pendiente')
+  const inProgressRequests = requestsArray.filter(r => r.state === 'en_proceso')
+  const completedRequests = requestsArray.filter(r => ['finalizado', 'aprobado', 'rechazado'].includes(r.state))
+
+  const renderRequestCard = (req: RequestData) => {
+    const stateInfo = stateLabels[req.state] || { label: req.state, className: 'bg-gray-100 text-gray-800' }
+    
+    return (
+      <div key={req.id} className="bg-[var(--surface-50)] dark:bg-[var(--surface-800)] rounded-lg p-4 border border-[var(--border)]">
+        <div className="flex items-start justify-between mb-2">
+          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[var(--accent-bg)] text-[var(--accent)]">
+            {typeRequestLabels[req.type_request] || req.type_request}
+          </span>
+          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${stateInfo.className}`}>
+            {stateInfo.label}
+          </span>
+        </div>
+        <p className="text-sm text-[var(--text-h)] mb-1">{req.details_tool}</p>
+        {req.preferred_brand && (
+          <p className="text-xs text-[var(--text)] mb-2">Marca preferida: {req.preferred_brand}</p>
+        )}
+        {req.tool && (
+          <p className="text-xs text-[var(--text)] mb-2">Herramienta: {req.tool.name}</p>
+        )}
+        <p className="text-xs text-[var(--text)] opacity-70">
+          {formatDate(req.created_at)}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Historial de Solicitudes" size="lg">
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-4 p-4 bg-[var(--surface-50)] dark:bg-[var(--surface-800)] rounded-lg border border-[var(--border)]">
+          <div>
+            <p className="text-xs text-[var(--text)]">Trabajador</p>
+            <p className="font-semibold text-[var(--text-h)]">{worker.name} {worker.lastname}</p>
+          </div>
+          <div>
+            <p className="text-xs text-[var(--text)]">Área</p>
+            <p className="font-semibold text-[var(--text-h)]">{formatAreaLabel(worker.area)}</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : requestsArray.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-[var(--text)]">Este trabajador no tiene solicitudes</p>
+          </div>
+        ) : (
+          <>
+            {pendingRequests.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                  Pendientes ({pendingRequests.length})
+                </h4>
+                <div className="space-y-3">
+                  {pendingRequests.map(renderRequestCard)}
+                </div>
+              </div>
+            )}
+
+            {inProgressRequests.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  En Proceso ({inProgressRequests.length})
+                </h4>
+                <div className="space-y-3">
+                  {inProgressRequests.map(renderRequestCard)}
+                </div>
+              </div>
+            )}
+
+            {completedRequests.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  Finalizados ({completedRequests.length})
+                </h4>
+                <div className="space-y-3">
+                  {completedRequests.map(renderRequestCard)}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Modal>
+  )
+}

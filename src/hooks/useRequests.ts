@@ -1,8 +1,9 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { requestService, type CreateRequestInput } from '../services/requestService'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
+import { requestService, type CreateRequestInput, type RequestData } from '../services/requestService'
 
 export const REQUEST_KEYS = {
   all: ['requests'] as const,
+  byWorker: (workerId: number) => ['requests', 'worker', workerId] as const,
 }
 
 export const useCreateRequest = () => {
@@ -13,5 +14,19 @@ export const useCreateRequest = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all })
     },
+  })
+}
+
+export const useRequestsByWorker = (workerId: number) => {
+  return useQuery({
+    queryKey: REQUEST_KEYS.byWorker(workerId),
+    queryFn: async () => {
+      const response = await requestService.getByWorker(workerId)
+      if ('error' in response) {
+        throw new Error(response.error || 'Error al obtener solicitudes')
+      }
+      return (response.data?.data ?? []) as RequestData[]
+    },
+    enabled: workerId > 0,
   })
 }
