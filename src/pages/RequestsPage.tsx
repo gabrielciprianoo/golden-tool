@@ -104,14 +104,6 @@ export const RequestsPage = () => {
   }
 
   const handleSaveRequest = async () => {
-    if (!applicantSignature) {
-      alert('Por favor firma como solicitante')
-      return
-    }
-    if (!authorizationSignature) {
-      alert('Por favor firma la autorización')
-      return
-    }
     if (!selectedWorker) return
 
     const needsTool = ['SE_ROMPIO', 'DESGASTE', 'SE_PERDIO'].includes(requestType)
@@ -123,8 +115,8 @@ export const RequestsPage = () => {
         type_request: requestType,
         details_tool: toolDetails,
         preferred_brand: preferredBrand || undefined,
-        signa_applicant: applicantSignature,
-        signa_authorization: authorizationSignature,
+        signa_applicant: applicantSignature || undefined,
+        signa_authorization: authorizationSignature || undefined,
       })
 
       if ('success' in result && result.success) {

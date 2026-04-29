@@ -6,8 +6,8 @@ export interface CreateRequestInput {
   type_request: 'PRIMERA_VEZ' | 'SE_ROMPIO' | 'DESGASTE' | 'SE_PERDIO'
   details_tool: string
   preferred_brand?: string
-  signa_applicant: string
-  signa_authorization: string
+  signa_applicant?: string
+  signa_authorization?: string
 }
 
 export const requestService = {
