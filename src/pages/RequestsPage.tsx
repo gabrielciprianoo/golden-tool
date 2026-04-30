@@ -4,6 +4,7 @@ import { ToastContainer } from '../components/organisms'
 import { useToastStore } from '../stores/toastStore'
 import { Modal } from '../components/molecules/Modal'
 import { FormField } from '../components/molecules'
+import { ToolSelect } from '../components/molecules/ToolSelect'
 import { SignatureModal } from '../components/molecules/SignatureModal'
 import { SignatureDisplay } from '../components/molecules/SignatureDisplay'
 import { useWorkers } from '../hooks/useWorkers'
@@ -331,16 +332,26 @@ export const RequestsPage = () => {
             {requestType && (
               <div className="space-y-4">
                 {['SE_ROMPIO', 'DESGASTE', 'SE_PERDIO'].includes(requestType) && (
-                  <Select
+                  <ToolSelect
                     label="HERRAMIENTA"
-                    options={[
-                      ...workerAssignments.map((a) => ({
-                        value: String(a.tool_id),
-                        label: a.tool?.name ?? `Herramienta #${a.tool_id}`,
-                      })),
-                    ]}
-                    value={selectedToolId}
-                    onChange={(e) => setSelectedToolId(e.target.value as unknown as number)}
+                    options={
+                      (
+                        workerAssignments as {
+                          tool_id: number
+                          tool?: { name: string; category: string; price: number; supplier: string }
+                        }[]
+                      )
+                        .filter((a) => a.tool)
+                        .map((a) => ({
+                          value: String(a.tool_id),
+                          name: a.tool?.name || 'Sin nombre',
+                          category: a.tool?.category || 'Sin categoría',
+                          price: a.tool?.price || 0,
+                          supplier: a.tool?.supplier || 'Sin proveedor',
+                        }))
+                    }
+                    value={selectedToolId as string}
+                    onChange={(value) => setSelectedToolId(value as unknown as number)}
                   />
                 )}
                 <FormField label="DETALLES DE LA HERRAMIENTA A SOLICITAR" htmlFor="tool-details">

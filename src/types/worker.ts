@@ -8,6 +8,16 @@ export const TOOL_STATES = [
   { value: 'obsoleto', label: 'Obsoleto' },
 ]
 
+export interface ToolInfo {
+  id: number
+  name: string
+  category: string
+  price: number
+  supplier: string
+  entry_date: string
+  warranty: string
+}
+
 export interface Assignment {
   id: number
   worker_id: string
@@ -17,15 +27,11 @@ export interface Assignment {
   date: string
   createdAt: string
   updatedAt: string
-  tool?: {
-    name: string
-  }
+  tool?: ToolInfo
 }
 
 export interface AssignmentWithTool extends Assignment {
-  tool?: {
-    name: string
-  }
+  tool?: ToolInfo
 }
 
 export interface AssignmentInput {
