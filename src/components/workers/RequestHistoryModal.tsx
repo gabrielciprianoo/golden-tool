@@ -253,7 +253,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
           setSelectedDetailRequest(null)
         }}
         title="Detalles de Solicitud"
-        size="lg"
+        size="xl"
       >
         {selectedDetailRequest && (
           <div className="space-y-6">
@@ -291,22 +291,26 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-6">
               <div>
                 <p className="text-sm text-[var(--text)] mb-2">Firma del Solicitante</p>
-                {selectedDetailRequest.signa_applicant ? (
-                  <SignatureDisplay signature={selectedDetailRequest.signa_applicant} />
-                ) : (
-                  <p className="text-[var(--text)] italic">Sin firma</p>
-                )}
+                <div className="h-80">
+                  {selectedDetailRequest.signa_applicant ? (
+                    <SignatureDisplay signature={selectedDetailRequest.signa_applicant} />
+                  ) : (
+                    <p className="text-[var(--text)] italic">Sin firma</p>
+                  )}
+                </div>
               </div>
               <div>
                 <p className="text-sm text-[var(--text)] mb-2">Firma de Autorización</p>
-                {selectedDetailRequest.signa_authorization ? (
-                  <SignatureDisplay signature={selectedDetailRequest.signa_authorization} />
-                ) : (
-                  <p className="text-[var(--text)] italic">Sin firma</p>
-                )}
+                <div className="h-80">
+                  {selectedDetailRequest.signa_authorization ? (
+                    <SignatureDisplay signature={selectedDetailRequest.signa_authorization} />
+                  ) : (
+                    <p className="text-[var(--text)] italic">Sin firma</p>
+                  )}
+                </div>
               </div>
             </div>
 

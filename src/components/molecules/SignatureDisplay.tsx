@@ -35,7 +35,7 @@ export const SignatureDisplay = ({
   }, [signature])
 
   return (
-    <div className="border-2 border-dashed border-[var(--border)] rounded-lg bg-white h-56 w-full overflow-hidden">
+    <div className="border-2 border-dashed border-[var(--border)] rounded-lg bg-white h-full w-full overflow-hidden">
       <SignatureCanvas
         ref={sigCanvasRef}
         penColor="black"

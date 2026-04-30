@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Input, Select, IconSearch, IconUser } from '../components/atoms'
 import { ToastContainer } from '../components/organisms'
+import { useToastStore } from '../stores/toastStore'
 import { Modal } from '../components/molecules/Modal'
 import { FormField } from '../components/molecules'
 import { SignatureModal } from '../components/molecules/SignatureModal'
@@ -23,6 +24,7 @@ const REQUEST_TYPE_OPTIONS = [
 export const RequestsPage = () => {
   const { data: workers = [], isLoading, error } = useWorkers()
   const createRequest = useCreateRequest()
+  const { addToast } = useToastStore()
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null)
   const { data: workerAssignments = [] } = useAssignmentsByWorker(selectedWorkerId ?? 0)
   
@@ -91,16 +93,16 @@ export const RequestsPage = () => {
 
   const handleCreateRequest = () => {
     if (!requestType) {
-      alert('Por favor selecciona un tipo de solicitud')
+      addToast('Por favor selecciona un tipo de solicitud', 'warning')
       return
     }
     const needsTool = ['SE_ROMPIO', 'DESGASTE', 'SE_PERDIO'].includes(requestType)
     if (needsTool && !selectedToolId) {
-      alert('Por favor selecciona la herramienta')
+      addToast('Por favor selecciona la herramienta', 'warning')
       return
     }
     if (!toolDetails) {
-      alert('Por favor ingresa los detalles de la herramienta')
+      addToast('Por favor ingresa los detalles de la herramienta', 'warning')
       return
     }
     setShowSignatureSection(true)
@@ -123,14 +125,14 @@ export const RequestsPage = () => {
       })
 
       if ('success' in result && result.success) {
-        alert('Solicitud creada correctamente!')
+        addToast('Solicitud creada correctamente', 'success')
         handleCloseModal()
       } else {
         const errorMsg = 'error' in result ? result.error : 'Error desconocido'
-        alert('Error al crear solicitud: ' + errorMsg)
+        addToast('Error al crear solicitud: ' + errorMsg, 'error')
       }
     } catch {
-      alert('Error al crear solicitud')
+      addToast('Error al crear solicitud', 'error')
     }
   }
 
@@ -332,7 +334,6 @@ export const RequestsPage = () => {
                   <Select
                     label="HERRAMIENTA"
                     options={[
-                      { value: '', label: 'Selecciona una herramienta...' },
                       ...workerAssignments.map((a) => ({
                         value: String(a.tool_id),
                         label: a.tool?.name ?? `Herramienta #${a.tool_id}`,
@@ -373,17 +374,17 @@ export const RequestsPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-6">
                   <div>
                     <p className="text-sm font-medium text-[var(--text-h)] mb-2">Firma de solicitante</p>
                     <div
                       onClick={() => handleOpenSignatureModal('applicant')}
-                      className="cursor-pointer hover:border-primary-500"
+                      className="cursor-pointer hover:border-primary-500 h-80"
                     >
                       {applicantSignature ? (
                         <SignatureDisplay signature={applicantSignature} />
                       ) : (
-                        <div className="h-32 border-2 border-dashed border-[var(--border)] rounded-lg bg-white flex items-center justify-center">
+                        <div className="h-full border-2 border-dashed border-[var(--border)] rounded-lg bg-white flex items-center justify-center">
                           <span className="text-[var(--text)] text-sm">Firmar aquí</span>
                         </div>
                       )}
@@ -393,12 +394,12 @@ export const RequestsPage = () => {
                     <p className="text-sm font-medium text-[var(--text-h)] mb-2">Firma de autorización</p>
                     <div
                       onClick={() => handleOpenSignatureModal('authorization')}
-                      className="cursor-pointer hover:border-primary-500"
+                      className="cursor-pointer hover:border-primary-500 h-80"
                     >
                       {authorizationSignature ? (
                         <SignatureDisplay signature={authorizationSignature} />
                       ) : (
-                        <div className="h-32 border-2 border-dashed border-[var(--border)] rounded-lg bg-white flex items-center justify-center">
+                        <div className="h-full border-2 border-dashed border-[var(--border)] rounded-lg bg-white flex items-center justify-center">
                           <span className="text-[var(--text)] text-sm">Firmar aquí</span>
                         </div>
                       )}
