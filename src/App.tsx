@@ -15,7 +15,18 @@ const queryClient = new QueryClient({
   },
 })
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const USER_TYPE = {
+  ADMIN: 0,
+  WORKER: 1,
+} as const
+
+interface RouteGuardProps {
+  children: React.ReactNode
+  requiredType?: typeof USER_TYPE.ADMIN | typeof USER_TYPE.WORKER
+  redirectTo: string
+}
+
+const RouteGuard = ({ children, requiredType, redirectTo }: RouteGuardProps) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const user = useAuthStore((state) => state.user)
   
@@ -23,27 +34,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />
   }
   
-  if (user?.type_user !== 0) {
-    return <Navigate to="/admin" replace />
+  if (requiredType !== undefined && user?.type_user !== requiredType) {
+    return <Navigate to={redirectTo} replace />
   }
   
   return <>{children}</>
 }
 
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
-  const user = useAuthStore((state) => state.user)
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
-  
-  if (user?.type_user !== 1) {
-    return <Navigate to="/home" replace />
-  }
-  
-  return <>{children}</>
-}
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
+  <RouteGuard requiredType={USER_TYPE.ADMIN} redirectTo="/admin">
+    {children}
+  </RouteGuard>
+)
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => (
+  <RouteGuard requiredType={USER_TYPE.WORKER} redirectTo="/home">
+    {children}
+  </RouteGuard>
+)
 
 function App() {
   useEffect(() => {

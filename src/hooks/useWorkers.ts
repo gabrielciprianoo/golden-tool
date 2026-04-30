@@ -54,7 +54,6 @@ export const useDeleteWorker = () => {
     mutationFn: (id: string) => workerService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WORKER_KEYS.all })
-      queryClient.invalidateQueries({ queryKey: ['tools'] })
     },
   })
 }
