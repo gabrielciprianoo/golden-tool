@@ -134,6 +134,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
     const stateInfo = stateLabels[req.state] || { label: req.state, className: 'bg-gray-100 text-gray-800' }
     const missing = getMissingSignatures(req)
     const showCompleteButton = canCompleteSignatures(req)
+    const canDelete = req.state === 'incompleta' || req.state === 'pendiente_aprobacion'
     const isCompleted = ['pendiente_aprobacion', 'cancelada'].includes(req.state)
     
     return (
@@ -191,10 +192,13 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
           </div>
         )}
 
-        {showCompleteButton && (
+        {canDelete && (
           <div className="mt-3 pt-3 border-t border-[var(--border)] flex justify-end">
             <button
-              onClick={() => handleDeleteRequestClick(req)}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDeleteRequestClick(req)
+              }}
               className="px-3 py-1.5 text-xs rounded border border-red-400 text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
             >
               Cancelar
