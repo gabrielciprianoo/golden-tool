@@ -22,11 +22,9 @@ const typeRequestLabels: Record<string, string> = {
 }
 
 const stateLabels: Record<string, { label: string; className: string }> = {
-  pendiente: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  en_proceso: { label: 'En proceso', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
-  finalizado: { label: 'Finalizado', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-  aprobado: { label: 'Aprobado', className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' },
-  rechazado: { label: 'Rechazado', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+  incompleta: { label: 'Incompleta', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  pendiente_aprobacion: { label: 'Pendiente de aprobación', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+  cancelada: { label: 'Cancelada', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
 }
 
 function formatDate(dateString: string): string {
@@ -41,7 +39,7 @@ function formatDate(dateString: string): string {
 }
 
 function canCompleteSignatures(req: RequestData): boolean {
-  return req.state === 'pendiente' || req.state === 'en_proceso'
+  return req.state === 'incompleta'
 }
 
 function getMissingSignatures(req: RequestData): { applicant: boolean; authorization: boolean } {
@@ -71,9 +69,9 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
   if (!worker) return null
 
   const requestsArray = Array.isArray(requests) ? requests : []
-  const pendingRequests = requestsArray.filter(r => r.state === 'pendiente')
-  const inProgressRequests = requestsArray.filter(r => r.state === 'en_proceso')
-  const completedRequests = requestsArray.filter(r => ['finalizado', 'aprobado', 'rechazado'].includes(r.state))
+  const incompleteRequests = requestsArray.filter(r => r.state === 'incompleta')
+  const pendingApprovalRequests = requestsArray.filter(r => r.state === 'pendiente_aprobacion')
+  const cancelledRequests = requestsArray.filter(r => r.state === 'cancelada')
 
   const handleOpenSignatureModal = (req: RequestData, type: 'applicant' | 'authorization') => {
     setSelectedRequest(req)
@@ -106,7 +104,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
     const stateInfo = stateLabels[req.state] || { label: req.state, className: 'bg-gray-100 text-gray-800' }
     const missing = getMissingSignatures(req)
     const showCompleteButton = canCompleteSignatures(req)
-    const isCompleted = ['finalizado', 'aprobado', 'rechazado'].includes(req.state)
+    const isCompleted = ['pendiente_aprobacion', 'cancelada'].includes(req.state)
     
     return (
       <div 
@@ -195,38 +193,38 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
             </div>
           ) : (
             <>
-              {pendingRequests.length > 0 && (
+              {incompleteRequests.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                    Pendientes ({pendingRequests.length})
+                    Incompletas ({incompleteRequests.length})
                   </h4>
                   <div className="space-y-3">
-                    {pendingRequests.map(renderRequestCard)}
+                    {incompleteRequests.map(renderRequestCard)}
                   </div>
                 </div>
               )}
 
-              {inProgressRequests.length > 0 && (
+              {pendingApprovalRequests.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    En Proceso ({inProgressRequests.length})
+                    Pendiente de aprobación ({pendingApprovalRequests.length})
                   </h4>
                   <div className="space-y-3">
-                    {inProgressRequests.map(renderRequestCard)}
+                    {pendingApprovalRequests.map(renderRequestCard)}
                   </div>
                 </div>
               )}
 
-              {completedRequests.length > 0 && (
+              {cancelledRequests.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    Finalizados ({completedRequests.length})
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    Canceladas ({cancelledRequests.length})
                   </h4>
                   <div className="space-y-3">
-                    {completedRequests.map(renderRequestCard)}
+                    {cancelledRequests.map(renderRequestCard)}
                   </div>
                 </div>
               )}

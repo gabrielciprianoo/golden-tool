@@ -44,8 +44,8 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
   const groups = groupByTool(assignments as Assignment[])
   const totalUnits = assignments.length
 
-  const pendingRequests = requests.filter(r => r.state === 'pendiente').length
-  const inProgressRequests = requests.filter(r => r.state === 'en_proceso').length
+  const incompleteRequests = requests.filter(r => r.state === 'incompleta').length
+  const pendingApprovalRequests = requests.filter(r => r.state === 'pendiente_aprobacion').length
 
   return (
     <>
@@ -144,14 +144,14 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
 
         <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
           <div className="flex items-center gap-2 text-sm">
-            {pendingRequests > 0 && (
+            {incompleteRequests > 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                {pendingRequests} pendiente{pendingRequests !== 1 ? 's' : ''}
+                {incompleteRequests} incompleta{incompleteRequests !== 1 ? 's' : ''}
               </span>
             )}
-            {inProgressRequests > 0 && (
+            {pendingApprovalRequests > 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                {inProgressRequests} en proceso
+                {pendingApprovalRequests} pendiente de aprobación
               </span>
             )}
           </div>

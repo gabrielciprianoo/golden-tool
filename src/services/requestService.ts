@@ -19,7 +19,7 @@ export interface RequestData {
   preferred_brand: string | null
   signa_applicant: string | null
   signa_authorization: string | null
-  state: 'pendiente' | 'en_proceso' | 'finalizado' | 'aprobado' | 'rechazado'
+  state: 'incompleta' | 'pendiente_aprobacion' | 'cancelada'
   created_at: string
   updated_at: string
   tool?: {
