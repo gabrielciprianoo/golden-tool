@@ -3,7 +3,8 @@ import { Modal } from '../../components/organisms'
 import { SignatureModal } from '../../components/molecules/SignatureModal'
 import { SignatureDisplay } from '../../components/molecules/SignatureDisplay'
 import { Button } from '../atoms'
-import { useRequestsByWorker, useUpdateRequest } from '../../hooks/useRequests'
+import { useRequestsByWorker, useUpdateRequest, useDeleteRequest } from '../../hooks/useRequests'
+import { useToastStore } from '../../stores/toastStore'
 import { type Worker } from '../../types/worker'
 import { type RequestData } from '../../services/requestService'
 import { formatAreaLabel } from '../../utils/toolUtils'
@@ -54,16 +55,45 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
   const [refreshKey, setRefreshKey] = useState(0)
   const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId, refreshKey)
   const updateRequest = useUpdateRequest()
+  const deleteRequest = useDeleteRequest()
+  const { addToast } = useToastStore()
   
   const [signatureModalOpen, setSignatureModalOpen] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<RequestData | null>(null)
   const [signatureType, setSignatureType] = useState<'applicant' | 'authorization' | null>(null)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedDetailRequest, setSelectedDetailRequest] = useState<RequestData | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [requestToDelete, setRequestToDelete] = useState<RequestData | null>(null)
 
   const handleOpenDetail = (req: RequestData) => {
     setSelectedDetailRequest(req)
     setDetailModalOpen(true)
+  }
+
+  const handleDeleteRequestClick = (req: RequestData) => {
+    setRequestToDelete(req)
+    setDeleteModalOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!requestToDelete) return
+
+    try {
+      const result = await deleteRequest.mutateAsync(requestToDelete.id)
+      if ('success' in result && result.success) {
+        addToast('Solicitud eliminada correctamente', 'success')
+        setRefreshKey(prev => prev + 1)
+      } else {
+        const errorMsg = 'error' in result ? result.error : 'Error desconocido'
+        addToast('Error al eliminar solicitud: ' + errorMsg, 'error')
+      }
+    } catch {
+      addToast('Error al eliminar solicitud', 'error')
+    }
+
+    setDeleteModalOpen(false)
+    setRequestToDelete(null)
   }
 
   if (!worker) return null
@@ -160,6 +190,17 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
             </div>
           </div>
         )}
+
+        {showCompleteButton && (
+          <div className="mt-3 pt-3 border-t border-[var(--border)] flex justify-end">
+            <button
+              onClick={() => handleDeleteRequestClick(req)}
+              className="px-3 py-1.5 text-xs rounded border border-red-400 text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
         
         <p className="text-xs text-[var(--text)] opacity-70 mt-2">
           {formatDate(req.created_at)}
@@ -243,6 +284,39 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
         onSave={handleSaveSignature}
         title={signatureType === 'applicant' ? 'Firma del Solicitante' : 'Firma de Autorización'}
       />
+
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false)
+          setRequestToDelete(null)
+        }}
+        title="Confirmar eliminación"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-[var(--text)]">
+            ¿Deseas eliminar la solicitud?
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteModalOpen(false)
+                setRequestToDelete(null)
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              className="!bg-red-600 hover:!bg-red-700"
+            >
+              Aceptar
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={detailModalOpen}

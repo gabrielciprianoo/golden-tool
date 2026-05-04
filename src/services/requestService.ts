@@ -1,4 +1,4 @@
-import { post, get, patch } from './apiClient'
+import { post, get, patch, del } from './apiClient'
 
 export interface CreateRequestInput {
   worker_id: number
@@ -42,5 +42,8 @@ export const requestService = {
   },
   update: async (id: number, data: UpdateRequestInput) => {
     return patch<{ success: boolean; data: RequestData; message: string }>(`/requests/${id}`, data)
+  },
+  delete: async (id: number) => {
+    return del<{ success: boolean; message: string }>(`/requests/${id}`)
   },
 }

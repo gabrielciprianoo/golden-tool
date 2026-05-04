@@ -42,3 +42,14 @@ export const useUpdateRequest = () => {
     },
   })
 }
+
+export const useDeleteRequest = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) => requestService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: REQUEST_KEYS.all })
+    },
+  })
+}
