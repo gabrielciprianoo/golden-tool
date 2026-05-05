@@ -26,7 +26,7 @@ export const ReassignToolsPage = () => {
     delay: 300,
   })
 
-  const worker = workers.find((w) => w.id === Number(workerId))
+  const worker = workers.find((w) => w.id === workerId)
   const [removeQty, setRemoveQty] = useState<Record<number, number>>({})
 
   const filteredAssignments = useMemo((): AssignmentWithTool[] => {

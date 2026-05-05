@@ -7,13 +7,11 @@ export const useAssignmentsByWorker = (workerId: number) => {
     queryFn: async () => {
       const res = await assignmentService.getByWorker(workerId)
 
-      const isSuccess = res?.data?.success === true
-
-      if (!isSuccess) {
+      if (!res.success) {
         throw new Error('Error al obtener asignaciones')
       }
 
-      return res.data.data ?? []
+      return res.data ?? []
     },
     enabled: !!workerId,
   })

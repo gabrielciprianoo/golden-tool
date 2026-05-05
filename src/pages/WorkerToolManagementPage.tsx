@@ -37,7 +37,7 @@ export const WorkerToolManagementPage = () => {
   const { searchTerm: searchTools, debouncedSearch: debouncedSearchTools, setSearchTerm: setSearchToolsTerm, clearSearch: clearSearchTools } = useDebounceSearch({ delay: 300 })
   const { searchTerm: searchAssigned, debouncedSearch: debouncedSearchAssigned, setSearchTerm: setSearchAssignedTerm, clearSearch: clearSearchAssigned } = useDebounceSearch({ delay: 300 })
 
-  const worker = workers.find((w) => w.id === Number(workerId))
+  const worker = workers.find((w) => w.id === workerId)
   
   const [selectedToolsState, setSelectedToolsState] = useState<Record<number, { quantity: number; states: ToolState[] }>>({})
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)

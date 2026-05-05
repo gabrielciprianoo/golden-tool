@@ -33,7 +33,7 @@ export const AssignToolsPage = () => {
     delay: 300,
   })
 
- const worker = workers.find((w) => w.id === Number(workerId))
+  const worker = workers.find((w) => w.id === workerId)
 
   const availableTools = useMemo((): ToolSelection[] => {
     return tools.map((t) => ({
