@@ -11,7 +11,9 @@ export const assignmentService = {
   },
 
   getByWorker: async (workerId: number) => {
-    return get<Assignment[]>(`${ENDPOINT}/worker/${workerId}`)
+    const result = await get<{ data: Assignment[] }>(`${ENDPOINT}/worker/${workerId}`)
+    if (!result.success) return result
+    return { success: true, data: result.data?.data ?? [] }
   },
 
   create: async (data: AssignmentInput) => {
