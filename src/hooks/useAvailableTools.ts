@@ -33,7 +33,7 @@ const getErrorMessage = (res: unknown): string => {
   return 'Error desconocido'
 }
 
-export const useAvailableTools = () => {
+export const useAvailableTools = (enabled = true) => {
   const toolsQuery = useQuery({
     queryKey: ['availableTools'],
     queryFn: async () => {
@@ -44,6 +44,9 @@ export const useAvailableTools = () => {
       }
       return (res.data ?? []).map(mapApiTool)
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled,
   })
 
   return {

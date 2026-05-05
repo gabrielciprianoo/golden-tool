@@ -17,7 +17,7 @@ export const useCreateRequest = () => {
   })
 }
 
-export const useRequestsByWorker = (workerId: number, refreshKey?: number) => {
+export const useRequestsByWorker = (workerId: number, enabled = true, refreshKey?: number) => {
   return useQuery({
     queryKey: [...REQUEST_KEYS.byWorker(workerId), refreshKey ?? 0],
     queryFn: async () => {
@@ -27,7 +27,9 @@ export const useRequestsByWorker = (workerId: number, refreshKey?: number) => {
       }
       return (response.data?.data ?? []) as RequestData[]
     },
-    enabled: workerId > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: enabled && workerId > 0,
   })
 }
 

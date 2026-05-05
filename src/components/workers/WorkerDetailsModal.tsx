@@ -37,9 +37,9 @@ function groupByTool(assignments: Assignment[]): ToolGroup[] {
 
 export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsModalProps) => {
   const numericWorkerId = worker ? Number(worker.id) : 0
-  const { data: assignments = [], isLoading } = useAssignmentsByWorker(numericWorkerId)
-  const { tools } = useAvailableTools()
-  const { data: requests = [] } = useRequestsByWorker(numericWorkerId)
+  const { data: assignments = [], isLoading } = useAssignmentsByWorker(numericWorkerId, isOpen)
+  const { tools } = useAvailableTools(isOpen)
+  const { data: requests = [] } = useRequestsByWorker(numericWorkerId, isOpen)
   const [expandedToolId, setExpandedToolId] = useState<number | null>(null)
   const [showRequests, setShowRequests] = useState(false)
 

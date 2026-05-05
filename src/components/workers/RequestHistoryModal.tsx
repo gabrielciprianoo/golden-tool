@@ -53,7 +53,7 @@ function getMissingSignatures(req: RequestData): { applicant: boolean; authoriza
 export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryModalProps) => {
   const numericWorkerId = worker ? Number(worker.id) : 0
   const [refreshKey, setRefreshKey] = useState(0)
-  const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId, refreshKey)
+  const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId, isOpen, refreshKey)
   const updateRequest = useUpdateRequest()
   const deleteRequest = useDeleteRequest()
   const { addToast } = useToastStore()

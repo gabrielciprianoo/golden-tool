@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { assignmentService, type AssignmentInput, type AssignmentUpdateInput } from '../services/assignmentService'
 
-export const useAssignmentsByWorker = (workerId: number) => {
+export const useAssignmentsByWorker = (workerId: number, enabled = true) => {
   return useQuery({
     queryKey: ['assignations', 'worker', workerId],
     queryFn: async () => {
@@ -13,7 +13,9 @@ export const useAssignmentsByWorker = (workerId: number) => {
 
       return res.data ?? []
     },
-    enabled: !!workerId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: enabled && !!workerId,
   })
 }
 
