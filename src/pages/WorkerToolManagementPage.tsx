@@ -37,21 +37,23 @@ export const WorkerToolManagementPage = () => {
   const { searchTerm: searchTools, debouncedSearch: debouncedSearchTools, setSearchTerm: setSearchToolsTerm, clearSearch: clearSearchTools } = useDebounceSearch({ delay: 300 })
   const { searchTerm: searchAssigned, debouncedSearch: debouncedSearchAssigned, setSearchTerm: setSearchAssignedTerm, clearSearch: clearSearchAssigned } = useDebounceSearch({ delay: 300 })
 
-  const worker = workers.find((w) => w.id === workerId)
+  const worker = workers.find((w) => Number(w.id) === numericWorkerId)
   
   const [selectedToolsState, setSelectedToolsState] = useState<Record<number, { quantity: number; states: ToolState[] }>>({})
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [deletingAssignment, setDeletingAssignment] = useState<AssignmentWithTool | null>(null)
 
   const toolList = useMemo((): ToolSelection[] => {
-    return tools.map((t) => ({
-      id: Number(t.id),
-      name: t.name,
-      supplier: t.supplier,
-      unassignedQuantity: t.unassignedQuantity,
-      quantity: selectedToolsState[Number(t.id)]?.quantity ?? 0,
-      states: selectedToolsState[Number(t.id)]?.states ?? [],
-    }))
+    return tools
+      .map((t) => ({
+        id: Number(t.id),
+        name: t.name,
+        supplier: t.supplier,
+        unassignedQuantity: t.unassignedQuantity,
+        quantity: selectedToolsState[Number(t.id)]?.quantity ?? 0,
+        states: selectedToolsState[Number(t.id)]?.states ?? [],
+      }))
+      .sort((a, b) => b.unassignedQuantity - a.unassignedQuantity)
   }, [tools, selectedToolsState])
 
   const toolPriceMap = useMemo(() => {

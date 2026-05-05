@@ -12,8 +12,10 @@ export const assignmentService = {
 
   getByWorker: async (workerId: number) => {
     const result = await get<{ data: Assignment[] }>(`${ENDPOINT}/worker/${workerId}`)
-    if (!result.success) return result
-    return { success: true, data: result.data?.data ?? [] }
+    if (!result.success) {
+      return { success: false, error: 'Error fetching', statusCode: 500 } as const
+    }
+    return { success: true as const, data: result.data?.data ?? [] }
   },
 
   create: async (data: AssignmentInput) => {

@@ -37,7 +37,7 @@ export const useAvailableTools = () => {
   const toolsQuery = useQuery({
     queryKey: ['availableTools'],
     queryFn: async () => {
-      const res = await get<ApiTool[]>('/stock')
+      const res = await get<ApiTool[]>('/tools')
       const isSuccess = 'success' in res && res.success === true
       if (!isSuccess) {
         throw new Error(getErrorMessage(res))

@@ -36,16 +36,18 @@ export const AssignToolsPage = () => {
   const worker = workers.find((w) => w.id === workerId)
 
   const availableTools = useMemo((): ToolSelection[] => {
-    return tools.map((t) => ({
-      id: Number(t.id),
-      name: t.name,
-      category: t.category,
-      price: Number(t.price ?? 0),
-      supplier: t.supplier,
-      unassignedQuantity: t.unassignedQuantity,
-      quantity: 0,
-      states: [],
-    }))
+    return tools
+      .map((t) => ({
+        id: Number(t.id),
+        name: t.name,
+        category: t.category,
+        price: Number(t.price ?? 0),
+        supplier: t.supplier,
+        unassignedQuantity: t.unassignedQuantity,
+        quantity: 0,
+        states: [],
+      }))
+      .sort((a, b) => b.unassignedQuantity - a.unassignedQuantity)
   }, [tools])
 
   const [toolList, setToolList] = useState<ToolSelection[]>(() => availableTools)
