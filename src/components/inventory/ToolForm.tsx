@@ -14,7 +14,6 @@ const toolSchema = object({
   price: number('El precio debe ser un número'),
   supplier: optional(string()),
   quantity: number('La cantidad debe ser un número'),
-  unassignedQuantity: number('La cantidad disponible debe ser un número'),
   status: optional(string()),
 })
 
@@ -24,7 +23,6 @@ interface ToolFormData {
   price: number
   supplier: string
   quantity: number
-  unassignedQuantity: number
   status: ToolStatus
 }
 
@@ -41,7 +39,6 @@ const defaultValues: ToolFormData = {
   price: 0,
   supplier: '',
   quantity: 0,
-  unassignedQuantity: 0,
   status: 'active',
 }
 
@@ -50,7 +47,6 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
     register,
     handleSubmit,
     reset,
-    setError,
     formState: { errors },
   } = useForm<ToolFormData>({
     defaultValues,
@@ -64,7 +60,6 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
         price: tool.price,
         supplier: tool.supplier || '',
         quantity: tool.quantity,
-        unassignedQuantity: tool.unassignedQuantity,
         status: tool.status,
       })
     } else {
@@ -73,19 +68,10 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
   }, [tool, reset])
 
   const handleFormSubmit = (data: ToolFormData) => {
-    if (tool && Number(data.unassignedQuantity) > Number(data.quantity)) {
-      setError('unassignedQuantity', {
-        type: 'manual',
-        message: 'La cantidad disponible no puede ser mayor que la cantidad total',
-      })
-      return
-    }
-
     const validData = parse(toolSchema, {
       ...data,
       price: Number(data.price),
       quantity: Number(data.quantity),
-      unassignedQuantity: tool ? Number(data.unassignedQuantity) : Number(data.quantity),
     })
 
     onSubmit(validData as ToolInput)
@@ -136,17 +122,6 @@ export const ToolForm: React.FC<ToolFormProps> = ({ tool, onSubmit, isLoading, o
             placeholder="0"
           />
         </FormField>
-
-        {tool && (
-          <FormField label="Cantidad disponible" htmlFor="unassignedQuantity" error={errors.unassignedQuantity?.message}>
-            <Input
-              id="unassignedQuantity"
-              type="number"
-              {...register('unassignedQuantity', { required: 'La cantidad es requerida', valueAsNumber: true })}
-              placeholder="0"
-            />
-          </FormField>
-        )}
 
         <FormField label="Garantía" htmlFor="status">
           <Select id="status" {...register('status')}>

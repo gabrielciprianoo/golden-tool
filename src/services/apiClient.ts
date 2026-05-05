@@ -106,23 +106,21 @@ export async function del<T>(url: string, config?: RequestConfig): Promise<ApiRe
 | ERROR HANDLER
 |--------------------------------------------------------------------------
 */
-function handleError(error: unknown): ApiError {
+function handleError<T>(error: unknown): ApiResult<T> {
   if (axios.isAxiosError(error)) {
     return {
       success: false,
       error: error.response?.data?.message || error.message || 'Error de conexión',
       statusCode: error.response?.status || 500,
       details: error.response?.data,
-    }
+    } as ApiResult<T>
   }
 
   return {
     success: false,
     error: 'Error desconocido',
     statusCode: 500,
-
-  }
-  
+  } as ApiResult<T>
 }
 
 

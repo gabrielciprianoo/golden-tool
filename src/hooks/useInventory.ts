@@ -53,7 +53,6 @@ export const useInventory = (): UseInventoryReturn => {
         supplier: data.supplier || '',
         entry_date: new Date().toISOString().split('T')[0],
         quantity: data.quantity,
-        unassigned_quantity: data.unassignedQuantity,
         warranty: data.status === 'active' ? 'con garantia' : 'sin garantia',
       })
       return true
@@ -73,7 +72,6 @@ export const useInventory = (): UseInventoryReturn => {
           supplier: data.supplier || '',
           entry_date: new Date().toISOString().split('T')[0],
           quantity: data.quantity,
-          unassigned_quantity: data.unassignedQuantity,
           warranty: data.status === 'active' ? 'con garantia' : 'sin garantia',
         },
       })

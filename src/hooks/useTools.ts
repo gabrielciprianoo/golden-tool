@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post, put, del } from '../services/apiClient'
 import type { Tool, ToolCategory, ToolStatus } from '../types/inventory'
 
+export const TOOL_KEYS = {
+  all: ['tools'] as const,
+  lists: () => [...TOOL_KEYS.all, 'list'] as const,
+  list: () => [...TOOL_KEYS.lists()] as const,
+}
+
 const GET_ENDPOINT = '/tools'
 const MUTATE_ENDPOINT = '/tool'
 
@@ -12,8 +18,8 @@ interface ToolPayload {
   supplier: string
   entry_date: string
   quantity: number
-  unassigned_quantity: number
   warranty: string
+  unassigned_quantity?: number
 }
 
 interface ApiTool {
@@ -51,7 +57,7 @@ export const useTools = () => {
   const queryClient = useQueryClient()
 
   const toolsQuery = useQuery({
-    queryKey: ['tools'],
+    queryKey: TOOL_KEYS.list(),
     queryFn: async () => {
       const res = await get<ApiTool[]>(GET_ENDPOINT)
       const isSuccess = 'success' in res && res.success === true
@@ -73,7 +79,7 @@ export const useTools = () => {
       return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: TOOL_KEYS.all })
     },
   })
 
@@ -88,7 +94,7 @@ export const useTools = () => {
       return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: TOOL_KEYS.all })
     },
   })
 
@@ -101,7 +107,7 @@ export const useTools = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: TOOL_KEYS.all })
     },
   })
 

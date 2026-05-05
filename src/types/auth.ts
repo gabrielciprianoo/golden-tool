@@ -9,6 +9,7 @@ export interface User {
   email: string
   name: string
   role: 'admin' | 'worker'
+  type_user?: number
 }
 
 export interface AuthResponse {
