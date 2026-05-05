@@ -27,8 +27,9 @@ export const useCreateAssignment = () => {
       return assignmentService.create(data)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: ['availableTools'] })
       queryClient.invalidateQueries({ queryKey: ['assignations'] })
+      queryClient.invalidateQueries({ queryKey: ['assignations', 'worker'] })
     },
   })
 
@@ -47,8 +48,9 @@ export const useUpdateAssignment = () => {
       return assignmentService.update(id, data)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: ['availableTools'] })
       queryClient.invalidateQueries({ queryKey: ['assignations'] })
+      queryClient.invalidateQueries({ queryKey: ['assignations', 'worker'] })
     },
   })
 
@@ -67,8 +69,9 @@ export const useDeleteAssignment = () => {
       return assignmentService.delete(id)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tools'] })
+      queryClient.invalidateQueries({ queryKey: ['availableTools'] })
       queryClient.invalidateQueries({ queryKey: ['assignations'] })
+      queryClient.invalidateQueries({ queryKey: ['assignations', 'worker'] })
     },
   })
 

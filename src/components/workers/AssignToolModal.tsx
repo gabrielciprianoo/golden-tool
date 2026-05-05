@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Modal } from '../organisms'
 import { Button } from '../atoms'
-import { useTools } from '../../hooks/useTools'
+import { useAvailableTools } from '../../hooks/useAvailableTools'
 import { useToastStore } from '../../stores/toastStore'
 import { assignmentService } from '../../services/assignmentService'
 import { TOOL_STATES, type ToolState, type Worker } from '../../types/worker'
-import { IconPlus, IconMinus, IconAlert, IconTool, IconPackage } from '../atoms/Icons'
+import { IconPlus, IconMinus, IconTool, IconPackage } from '../atoms/Icons'
 
 interface AssignToolModalProps {
   isOpen: boolean
@@ -25,11 +25,11 @@ interface ToolSelection {
 }
 
 export const AssignToolModal = ({ isOpen, onClose, worker }: AssignToolModalProps) => {
-  const { tools, isLoading, refetch } = useTools()
+  const { tools, isLoading, refetch } = useAvailableTools()
   const { addToast } = useToastStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const availableTools = useMemo(() => {
+  const availableTools = useMemo((): ToolSelection[] => {
     return tools.map((t) => ({
       id: Number(t.id),
       name: t.name,
@@ -244,12 +244,6 @@ export const AssignToolModal = ({ isOpen, onClose, worker }: AssignToolModalProp
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-[var(--text-h)] truncate">{tool.name}</p>
-                          {isDisabled && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-full">
-                              <IconAlert className="w-3 h-3" />
-                              Agotado
-                            </span>
-                          )}
                         </div>
                         <div className="flex items-center gap-2 text-sm text-[var(--text)]">
                           <span className="px-2 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] rounded text-xs font-medium">
@@ -286,11 +280,7 @@ export const AssignToolModal = ({ isOpen, onClose, worker }: AssignToolModalProp
           </div>
         )}
 
-        {filteredTools.some((t) => t.unassignedQuantity === 0) && (
-          <p className="text-xs text-[var(--text)] text-center">
-            Las herramientas marcadas como "Agotado" no están disponibles para asignación
-          </p>
-        )}
+        
       </div>
     </Modal>
   )

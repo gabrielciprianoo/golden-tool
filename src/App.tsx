@@ -1,32 +1,11 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MainLayout, AdminLayout } from './components/templates'
 import { HeroSection } from './components/organisms'
 import { LoginPage, AdminPage, WorkersPage, InventoryPage, ReviewsPage, WorkerToolManagementPage, RequestsPage } from './pages'
 import { useAuthStore } from './stores/authStore'
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      retry: 1,
-    },
-  },
-})
-
-const USER_TYPE = {
-  ADMIN: 0,
-  WORKER: 1,
-} as const
-
-interface RouteGuardProps {
-  children: React.ReactNode
-  requiredType?: typeof USER_TYPE.ADMIN | typeof USER_TYPE.WORKER
-  redirectTo: string
-}
-
-const RouteGuard = ({ children, requiredType, redirectTo }: RouteGuardProps) => {
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const user = useAuthStore((state) => state.user)
   

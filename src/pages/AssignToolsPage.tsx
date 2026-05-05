@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, IconPlus, IconMinus, IconSearch, IconPackage, IconUser, IconCheck } from '../components/atoms'
 import { ToastContainer } from '../components/organisms'
-import { useTools } from '../hooks/useTools'
+import { useAvailableTools } from '../hooks/useAvailableTools'
 import { useWorkers } from '../hooks/useWorkers'
 import { useCreateAssignment } from '../hooks/useAssignments'
 import { useToastStore } from '../stores/toastStore'
@@ -25,7 +25,7 @@ export const AssignToolsPage = () => {
   const { workerId } = useParams<{ workerId: string }>()
   const navigate = useNavigate()
   const { data: workers = [], isLoading: workersLoading } = useWorkers()
-  const { tools, isLoading: toolsLoading, refetch } = useTools()
+  const { tools, isLoading: toolsLoading, refetch } = useAvailableTools()
   const { createAssignment, isCreating } = useCreateAssignment()
   const { addToast } = useToastStore()
   
@@ -36,7 +36,7 @@ export const AssignToolsPage = () => {
  const worker = workers.find((w) => w.id === Number(workerId))
 
   const availableTools = useMemo((): ToolSelection[] => {
-    return (tools ?? []).map((t) => ({
+    return tools.map((t) => ({
       id: Number(t.id),
       name: t.name,
       category: t.category,

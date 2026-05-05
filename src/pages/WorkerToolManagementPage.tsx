@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, IconPlus, IconMinus, IconSearch, IconPackage, IconUser, IconCheck, IconTrash } from '../components/atoms'
 import { ToastContainer, ConfirmDeleteModal } from '../components/organisms'
-import { useTools } from '../hooks/useTools'
+import { useAvailableTools } from '../hooks/useAvailableTools'
 import { useWorkers } from '../hooks/useWorkers'
 import { useAssignmentsByWorker, useCreateAssignment, useUpdateAssignment, useDeleteAssignment } from '../hooks/useAssignments'
 import { useToastStore } from '../stores/toastStore'
@@ -13,6 +13,7 @@ import { formatAreaLabel, getStockStyle } from '../utils/toolUtils'
 interface ToolSelection {
   id: number
   name: string
+  supplier: string
   unassignedQuantity: number
   quantity: number
   states: ToolState[]
@@ -24,7 +25,7 @@ export const WorkerToolManagementPage = () => {
   const { addToast } = useToastStore()
   
   const { data: workers = [], isLoading: workersLoading } = useWorkers()
-  const { tools, isLoading: toolsLoading } = useTools()
+  const { tools, isLoading: toolsLoading } = useAvailableTools()
   
   const numericWorkerId = Number(workerId)
   const { data: assignments = [], isLoading: assignmentsLoading, refetch: refetchAssignments } = useAssignmentsByWorker(numericWorkerId)
@@ -43,14 +44,23 @@ export const WorkerToolManagementPage = () => {
   const [deletingAssignment, setDeletingAssignment] = useState<AssignmentWithTool | null>(null)
 
   const toolList = useMemo((): ToolSelection[] => {
-    return (tools ?? []).map((t) => ({
+    return tools.map((t) => ({
       id: Number(t.id),
       name: t.name,
+      supplier: t.supplier,
       unassignedQuantity: t.unassignedQuantity,
       quantity: selectedToolsState[Number(t.id)]?.quantity ?? 0,
       states: selectedToolsState[Number(t.id)]?.states ?? [],
     }))
   }, [tools, selectedToolsState])
+
+  const toolPriceMap = useMemo(() => {
+    const map: Record<number, number> = {}
+    tools.forEach((t) => {
+      map[Number(t.id)] = t.price
+    })
+    return map
+  }, [tools])
 
   const filteredAvailableTools = useMemo(() => {
     const term = debouncedSearchTools.toLowerCase()
@@ -64,9 +74,21 @@ export const WorkerToolManagementPage = () => {
     )
   }, [assignments, debouncedSearchAssigned])
 
-  const selectedTools = useMemo(() => toolList.filter((t) => t.quantity > 0), [toolList])
+const selectedTools = useMemo(() => toolList.filter((t) => t.quantity > 0), [toolList])
   const selectedCount = selectedTools.length
   const totalItems = selectedTools.reduce((acc, t) => acc + t.quantity, 0)
+
+  const assignedCost = useMemo(() => {
+    return assignments.reduce((acc: number, a: AssignmentWithTool) => acc + (toolPriceMap[a.tool_id] || 0) * a.assigned_quantity, 0)
+  }, [assignments, toolPriceMap])
+
+  const selectedCost = useMemo(() => {
+    return selectedTools.reduce((acc: number, t: ToolSelection) => acc + (toolPriceMap[t.id] || 0) * t.quantity, 0)
+  }, [selectedTools, toolPriceMap])
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)
+  }
 
   const isLoading = workersLoading || toolsLoading || assignmentsLoading
   const isPending = isUpdating || isDeleting || isCreating
@@ -253,6 +275,10 @@ export const WorkerToolManagementPage = () => {
             <p className="text-2xl font-bold text-primary-600">
               {assignments.length}
             </p>
+            <p className="text-sm text-[var(--text)] mt-2">Costo total</p>
+            <p className="text-xl font-bold text-green-600">
+              {formatCurrency(assignedCost)}
+            </p>
           </div>
         </div>
       </div>
@@ -264,9 +290,14 @@ export const WorkerToolManagementPage = () => {
               <h3 className="font-semibold text-[var(--text-h)] text-lg">
                 Herramientas Asignadas
               </h3>
-              <span className="text-sm text-[var(--text)]">
-                {filteredAssignments.length} de {assignments.length}
-              </span>
+              <div className="text-right">
+                <span className="text-sm text-[var(--text)]">
+                  {filteredAssignments.length} de {assignments.length}
+                </span>
+                <p className="text-sm text-green-600 font-medium">
+                  Total: {formatCurrency(assignedCost)}
+                </p>
+              </div>
             </div>
 
             <div className="relative mb-4">
@@ -307,6 +338,7 @@ export const WorkerToolManagementPage = () => {
                   <thead className="bg-[var(--surface-50)] sticky top-0">
                     <tr className="border-b border-[var(--border)]">
                       <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text-h)]">Herramienta</th>
+                      <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Proveedor</th>
                       <th className="text-center px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Cant</th>
                       <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Estado</th>
                       <th className="text-right px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Acciones</th>
@@ -324,6 +356,11 @@ export const WorkerToolManagementPage = () => {
                               {assignment.tool?.name || `Herramienta #${assignment.tool_id}`}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-3 py-3 text-left">
+                          <span className="text-xs text-[var(--text)]">
+                            {assignment.tool?.supplier || '-'}
+                          </span>
                         </td>
                         <td className="px-3 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
@@ -381,9 +418,14 @@ export const WorkerToolManagementPage = () => {
                 Asignar Nuevas Herramientas
               </h3>
               {selectedCount > 0 && (
-                <span className="text-sm text-primary-600 font-medium">
-                  {totalItems} {totalItems === 1 ? 'herramienta' : 'herramientas'}
-                </span>
+                <div className="text-right">
+                  <span className="text-sm text-primary-600 font-medium">
+                    {totalItems} {totalItems === 1 ? 'herramienta' : 'herramientas'}
+                  </span>
+                  <p className="text-sm text-green-600 font-medium">
+                    {formatCurrency(selectedCost)}
+                  </p>
+                </div>
               )}
             </div>
 
@@ -425,6 +467,7 @@ export const WorkerToolManagementPage = () => {
                   <thead className="bg-[var(--surface-50)] sticky top-0">
                     <tr className="border-b border-[var(--border)]">
                       <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--text-h)]">Herramienta</th>
+                      <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Proveedor</th>
                       <th className="text-center px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Stock</th>
                       <th className="text-center px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Cant</th>
                       <th className="text-left px-3 py-3 text-xs font-semibold text-[var(--text-h)]">Estado</th>
@@ -449,6 +492,9 @@ export const WorkerToolManagementPage = () => {
                               </div>
                               <span className="font-medium text-[var(--text-h)] text-sm truncate max-w-[120px]">{tool.name}</span>
                             </div>
+                          </td>
+                          <td className="px-3 py-3 text-left">
+                            <span className="text-xs text-[var(--text)]">{tool.supplier || '-'}</span>
                           </td>
                           <td className="px-3 py-3 text-center">
                             <span className={`inline-flex items-center gap-1 text-xs font-medium ${stockInfo.className}`}>

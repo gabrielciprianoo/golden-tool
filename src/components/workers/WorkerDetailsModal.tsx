@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/organisms'
 import { useAssignmentsByWorker } from '../../hooks/useAssignments'
+import { useAvailableTools } from '../../hooks/useAvailableTools'
 import { useRequestsByWorker } from '../../hooks/useRequests'
 import { type Worker, type Assignment } from '../../types/worker'
 import { formatAreaLabel, getStateLabel, getStateStyle, formatDate as formatDateUtil } from '../../utils/toolUtils'
@@ -15,6 +16,7 @@ interface WorkerDetailsModalProps {
 interface ToolGroup {
   tool_id: number
   toolName: string
+  supplier: string
   assignments: Assignment[]
 }
 
@@ -23,10 +25,11 @@ function groupByTool(assignments: Assignment[]): ToolGroup[] {
   for (const a of assignments) {
     const existing = map.get(a.tool_id)
     const toolName = a.tool?.name ?? `Herramienta #${a.tool_id}`
+    const supplier = a.tool?.supplier ?? ''
     if (existing) {
       existing.assignments.push(a)
     } else {
-      map.set(a.tool_id, { tool_id: a.tool_id, toolName, assignments: [a] })
+      map.set(a.tool_id, { tool_id: a.tool_id, toolName, supplier, assignments: [a] })
     }
   }
   return Array.from(map.values())
@@ -35,6 +38,7 @@ function groupByTool(assignments: Assignment[]): ToolGroup[] {
 export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsModalProps) => {
   const numericWorkerId = worker ? Number(worker.id) : 0
   const { data: assignments = [], isLoading } = useAssignmentsByWorker(numericWorkerId)
+  const { tools } = useAvailableTools()
   const { data: requests = [] } = useRequestsByWorker(numericWorkerId)
   const [expandedToolId, setExpandedToolId] = useState<number | null>(null)
   const [showRequests, setShowRequests] = useState(false)
@@ -44,6 +48,14 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
   const groups = groupByTool(assignments as Assignment[])
   const totalUnits = assignments.length
 
+  const toolPriceMap = new Map<number, number>()
+  tools.forEach((t) => toolPriceMap.set(Number(t.id), t.price))
+
+  const totalCost = assignments.reduce((acc: number, a: Assignment) => acc + (toolPriceMap.get(a.tool_id) || 0), 0)
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)
+  }
   const incompleteRequests = requests.filter(r => r.state === 'incompleta').length
   const pendingApprovalRequests = requests.filter(r => r.state === 'pendiente_aprobacion').length
 
@@ -72,7 +84,7 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
 
         <div>
           <h4 className="font-semibold text-[var(--text-h)] mb-3">
-            Herramientas Asignadas ({totalUnits} unidad{totalUnits !== 1 ? 'es' : ''} · {groups.length} tipo{groups.length !== 1 ? 's' : ''})
+            Herramientas Asignadas ({totalUnits} unidad{totalUnits !== 1 ? 'es' : ''} · {groups.length} tipo{groups.length !== 1 ? 's' : ''}) · Total: {formatCurrency(totalCost)}
           </h4>
 
           {isLoading ? (
@@ -104,6 +116,11 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
                       <span className="flex-1 font-medium text-[var(--text-h)] text-sm">
                         {group.toolName}
                       </span>
+                      {group.supplier && (
+                        <span className="text-xs text-[var(--text)] shrink-0">
+                          {group.supplier}
+                        </span>
+                      )}
                       <span className="text-xs text-[var(--text)] shrink-0">
                         {count} unidad{count !== 1 ? 'es' : ''}
                       </span>
