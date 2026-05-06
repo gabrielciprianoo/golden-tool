@@ -19,7 +19,7 @@ export interface RequestData {
   preferred_brand: string | null
   signa_applicant: string | null
   signa_authorization: string | null
-  state: 'incompleta' | 'pendiente_aprobacion' | 'cancelada'
+  state: 'incompleta' | 'pendiente_compra' | 'pendiente_entrega' | 'entrega_confirmada' | 'cancelada'
   created_at: string
   updated_at: string
   tool?: {
@@ -31,6 +31,7 @@ export interface RequestData {
 export interface UpdateRequestInput {
   signa_applicant?: string
   signa_authorization?: string
+  state?: 'incompleta' | 'pendiente_compra' | 'pendiente_entrega' | 'entrega_confirmada' | 'cancelada'
 }
 
 export const requestService = {

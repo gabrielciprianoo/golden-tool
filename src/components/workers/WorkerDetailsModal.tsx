@@ -57,7 +57,9 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value)
   }
   const incompleteRequests = requests.filter(r => r.state === 'incompleta').length
-  const pendingApprovalRequests = requests.filter(r => r.state === 'pendiente_aprobacion').length
+  const pendingApprovalRequests = requests.filter(r => r.state === 'pendiente_compra').length
+  const pendingDeliveryRequests = requests.filter(r => r.state === 'pendiente_entrega').length
+  const deliveredRequests = requests.filter(r => r.state === 'entrega_confirmada').length
 
   return (
     <>
@@ -168,7 +170,17 @@ export const WorkerDetailsModal = ({ isOpen, onClose, worker }: WorkerDetailsMod
             )}
             {pendingApprovalRequests > 0 && (
               <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                {pendingApprovalRequests} pendiente de aprobación
+                {pendingApprovalRequests} pendiente de compra
+              </span>
+            )}
+            {pendingDeliveryRequests > 0 && (
+              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                {pendingDeliveryRequests} pendiente de entrega
+              </span>
+            )}
+            {deliveredRequests > 0 && (
+              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                {deliveredRequests} entrega{deliveredRequests !== 1 ? 's' : ''} confirmad{deliveredRequests !== 1 ? 'as' : 'a'}
               </span>
             )}
           </div>

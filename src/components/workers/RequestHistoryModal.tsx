@@ -24,7 +24,9 @@ const typeRequestLabels: Record<string, string> = {
 
 const stateLabels: Record<string, { label: string; className: string }> = {
   incompleta: { label: 'Incompleta', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  pendiente_aprobacion: { label: 'Pendiente de aprobación', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+  pendiente_compra: { label: 'Pendiente de compra', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+  pendiente_entrega: { label: 'Pendiente de entrega', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+  entrega_confirmada: { label: 'Entrega confirmada', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
   cancelada: { label: 'Cancelada', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
 }
 
@@ -76,6 +78,44 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
     setDeleteModalOpen(true)
   }
 
+  const handleDeliverRequest = async (req: RequestData) => {
+    try {
+      const result = await updateRequest.mutateAsync({
+        id: req.id,
+        data: { state: 'pendiente_entrega' as const },
+      })
+      if ('success' in result && result.success) {
+        addToast('Solicitud marcada como pendiente de entrega', 'success')
+        setRefreshKey(prev => prev + 1)
+      } else {
+        const errorMsg = 'error' in result ? result.error : 'Error desconocido'
+        addToast('Error al actualizar solicitud: ' + errorMsg, 'error')
+      }
+    } catch (error) {
+      console.error('Error delivering request:', error)
+      addToast('Error al actualizar solicitud', 'error')
+    }
+  }
+
+  const handleConfirmDelivery = async (req: RequestData) => {
+    try {
+      const result = await updateRequest.mutateAsync({
+        id: req.id,
+        data: { state: 'entrega_confirmada' as const },
+      })
+      if ('success' in result && result.success) {
+        addToast('Entrega confirmada correctamente', 'success')
+        setRefreshKey(prev => prev + 1)
+      } else {
+        const errorMsg = 'error' in result ? result.error : 'Error desconocido'
+        addToast('Error al confirmar entrega: ' + errorMsg, 'error')
+      }
+    } catch (error) {
+      console.error('Error confirming delivery:', error)
+      addToast('Error al confirmar entrega', 'error')
+    }
+  }
+
   const handleConfirmDelete = async () => {
     if (!requestToDelete) return
 
@@ -100,7 +140,9 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
 
   const requestsArray = Array.isArray(requests) ? requests : []
   const incompleteRequests = requestsArray.filter(r => r.state === 'incompleta')
-  const pendingApprovalRequests = requestsArray.filter(r => r.state === 'pendiente_aprobacion')
+  const pendingApprovalRequests = requestsArray.filter(r => r.state === 'pendiente_compra')
+  const pendingDeliveryRequests = requestsArray.filter(r => r.state === 'pendiente_entrega')
+  const deliveredRequests = requestsArray.filter(r => r.state === 'entrega_confirmada')
   const cancelledRequests = requestsArray.filter(r => r.state === 'cancelada')
 
   const handleOpenSignatureModal = (req: RequestData, type: 'applicant' | 'authorization') => {
@@ -134,8 +176,10 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
     const stateInfo = stateLabels[req.state] || { label: req.state, className: 'bg-gray-100 text-gray-800' }
     const missing = getMissingSignatures(req)
     const showCompleteButton = canCompleteSignatures(req)
-    const canDelete = req.state === 'incompleta' || req.state === 'pendiente_aprobacion'
-    const isCompleted = ['pendiente_aprobacion', 'cancelada'].includes(req.state)
+    const canDelete = req.state === 'incompleta' || req.state === 'pendiente_compra' || req.state === 'pendiente_entrega'
+    const canDeliver = req.state === 'pendiente_compra'
+    const canConfirmDelivery = req.state === 'pendiente_entrega'
+    const isCompleted = ['pendiente_compra', 'pendiente_entrega', 'entrega_confirmada', 'cancelada'].includes(req.state)
     
     return (
       <div 
@@ -192,17 +236,41 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
           </div>
         )}
 
-        {canDelete && (
-          <div className="mt-3 pt-3 border-t border-[var(--border)] flex justify-end">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDeleteRequestClick(req)
-              }}
-              className="px-3 py-1.5 text-xs rounded border border-red-400 text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
-            >
-              Cancelar
-            </button>
+        {(canDelete || canDeliver || canConfirmDelivery) && (
+          <div className="mt-3 pt-3 border-t border-[var(--border)] flex justify-end gap-2">
+            {canDeliver && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDeliverRequest(req)
+                }}
+                className="px-3 py-1.5 text-xs rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 transition-colors"
+              >
+                Entregado
+              </button>
+            )}
+            {canConfirmDelivery && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleConfirmDelivery(req)
+                }}
+                className="px-3 py-1.5 text-xs rounded border border-green-400 text-green-700 bg-green-50 hover:bg-green-100 transition-colors"
+              >
+                Confirmar Entrega
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDeleteRequestClick(req)
+                }}
+                className="px-3 py-1.5 text-xs rounded border border-red-400 text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+              >
+                Cancelar
+              </button>
+            )}
           </div>
         )}
         
@@ -238,6 +306,30 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
             </div>
           ) : (
             <>
+              {pendingDeliveryRequests.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                    Pendiente de entrega ({pendingDeliveryRequests.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {pendingDeliveryRequests.map(renderRequestCard)}
+                  </div>
+                </div>
+              )}
+
+              {pendingApprovalRequests.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    Pendiente de compra ({pendingApprovalRequests.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {pendingApprovalRequests.map(renderRequestCard)}
+                  </div>
+                </div>
+              )}
+
               {incompleteRequests.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
@@ -250,14 +342,14 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
                 </div>
               )}
 
-              {pendingApprovalRequests.length > 0 && (
+              {deliveredRequests.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-[var(--text-h)] mb-3 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    Pendiente de aprobación ({pendingApprovalRequests.length})
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    Entrega confirmada ({deliveredRequests.length})
                   </h4>
                   <div className="space-y-3">
-                    {pendingApprovalRequests.map(renderRequestCard)}
+                    {deliveredRequests.map(renderRequestCard)}
                   </div>
                 </div>
               )}
