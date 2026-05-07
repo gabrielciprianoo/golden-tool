@@ -4,6 +4,7 @@ import { requestService, type CreateRequestInput, type RequestData, type UpdateR
 export const REQUEST_KEYS = {
   all: ['requests'] as const,
   byWorker: (workerId: number) => ['requests', 'worker', workerId] as const,
+  createdByMe: ['requests', 'created-by-me'] as const,
 }
 
 export const useCreateRequest = () => {
@@ -30,6 +31,22 @@ export const useRequestsByWorker = (workerId: number, enabled = true, refreshKey
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     enabled: enabled && workerId > 0,
+  })
+}
+
+export const useRequestsCreatedByMe = (enabled = true, refreshKey?: number) => {
+  return useQuery({
+    queryKey: [...REQUEST_KEYS.createdByMe, refreshKey ?? 0],
+    queryFn: async () => {
+      const response = await requestService.getCreatedByMe()
+      if ('error' in response) {
+        throw new Error(response.error || 'Error al obtener solicitudes')
+      }
+      return (response.data?.data ?? []) as RequestData[]
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled,
   })
 }
 

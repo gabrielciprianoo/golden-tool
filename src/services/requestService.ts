@@ -26,6 +26,12 @@ export interface RequestData {
     id: number
     name: string
   }
+  worker?: {
+    id: number
+    name: string
+    lastname: string
+    worker_code: string
+  }
 }
 
 export interface UpdateRequestInput {
@@ -40,6 +46,9 @@ export const requestService = {
   },
   getByWorker: async (workerId: number) => {
     return get<{ success: boolean; data: RequestData[] }>(`/requests/worker/${workerId}`)
+  },
+  getCreatedByMe: async () => {
+    return get<{ success: boolean; data: RequestData[] }>('/requests/created-by-me')
   },
   update: async (id: number, data: UpdateRequestInput) => {
     return patch<{ success: boolean; data: RequestData; message: string }>(`/requests/${id}`, data)
