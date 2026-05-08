@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal } from '../../components/organisms'
 import { SignatureModal } from '../../components/molecules/SignatureModal'
 import { SignatureDisplay } from '../../components/molecules/SignatureDisplay'
@@ -56,6 +56,12 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
   const numericWorkerId = worker ? Number(worker.id) : 0
   const [refreshKey, setRefreshKey] = useState(0)
   const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId, isOpen, refreshKey)
+
+  useEffect(() => {
+    if (isOpen) {
+      setRefreshKey(prev => prev + 1)
+    }
+  }, [isOpen])
   const updateRequest = useUpdateRequest()
   const deleteRequest = useDeleteRequest()
   const { addToast } = useToastStore()
