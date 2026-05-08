@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, IconPlus, IconMinus, IconSearch, IconPackage, IconUser, IconCheck, IconTrash } from '../components/atoms'
 import { ToastContainer, ConfirmDeleteModal } from '../components/organisms'
@@ -24,11 +24,17 @@ export const WorkerToolManagementPage = () => {
   const navigate = useNavigate()
   const { addToast } = useToastStore()
   
-  const { data: workers = [], isLoading: workersLoading } = useWorkers()
-  const { tools, isLoading: toolsLoading } = useAvailableTools()
+  const { data: workers = [], isLoading: workersLoading, refetch: refetchWorkers } = useWorkers()
+  const { tools, isLoading: toolsLoading, refetch: refetchTools } = useAvailableTools()
   
   const numericWorkerId = Number(workerId)
   const { data: assignments = [], isLoading: assignmentsLoading, refetch: refetchAssignments } = useAssignmentsByWorker(numericWorkerId)
+
+  useEffect(() => {
+    refetchWorkers()
+    refetchTools()
+    refetchAssignments()
+  }, [refetchWorkers, refetchTools, refetchAssignments])
   
   const { createAssignment, isCreating } = useCreateAssignment()
   const { updateAssignment, isUpdating } = useUpdateAssignment()
