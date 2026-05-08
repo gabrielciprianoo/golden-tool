@@ -30,11 +30,11 @@ const typeRequestStyles: Record<string, string> = {
 }
 
 const stateLabels: Record<string, { label: string; className: string }> = {
-  incompleta: { label: 'Incompleta', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  pendiente_compra: { label: 'Pendiente de compra', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
-  pendiente_entrega: { label: 'Pendiente de entrega', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
-  entrega_confirmada: { label: 'Entrega confirmada', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-  cancelada: { label: 'Cancelada', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+  incompleta: { label: 'Incompleta', className: 'bg-yellow-500 text-white' },
+  pendiente_compra: { label: 'Pendiente de compra', className: 'bg-blue-600 text-white' },
+  pendiente_entrega: { label: 'Pendiente de entrega', className: 'bg-orange-500 text-white' },
+  entrega_confirmada: { label: 'Entrega confirmada', className: 'bg-green-600 text-white' },
+  cancelada: { label: 'Cancelada', className: 'bg-red-600 text-white' },
 }
 
 function formatDate(dateString: string): string {
