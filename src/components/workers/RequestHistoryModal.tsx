@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal } from '../../components/organisms'
 import { SignatureModal } from '../../components/molecules/SignatureModal'
 import { SignatureDisplay } from '../../components/molecules/SignatureDisplay'
@@ -20,6 +20,13 @@ const typeRequestLabels: Record<string, string> = {
   SE_ROMPIO: 'Se rompió',
   DESGASTE: 'Desgaste',
   SE_PERDIO: 'Se perdió',
+}
+
+const typeRequestStyles: Record<string, string> = {
+  PRIMERA_VEZ: 'bg-blue-600 text-white',
+  SE_ROMPIO: 'bg-red-600 text-white',
+  DESGASTE: 'bg-amber-500 text-white',
+  SE_PERDIO: 'bg-gray-600 text-white',
 }
 
 const stateLabels: Record<string, { label: string; className: string }> = {
@@ -56,6 +63,12 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
   const numericWorkerId = worker ? Number(worker.id) : 0
   const [refreshKey, setRefreshKey] = useState(0)
   const { data: requests, isLoading } = useRequestsByWorker(numericWorkerId, isOpen, refreshKey)
+
+  useEffect(() => {
+    if (isOpen) {
+      setRefreshKey(prev => prev + 1)
+    }
+  }, [isOpen])
   const updateRequest = useUpdateRequest()
   const deleteRequest = useDeleteRequest()
   const { addToast } = useToastStore()
@@ -188,7 +201,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
         onClick={() => isCompleted && handleOpenDetail(req)}
       >
         <div className="flex items-start justify-between mb-2">
-          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[var(--accent-bg)] text-[var(--accent)]">
+          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${typeRequestStyles[req.type_request] || 'bg-gray-100 text-gray-800'}`}>
             {typeRequestLabels[req.type_request] || req.type_request}
           </span>
           <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${stateInfo.className}`}>
@@ -428,7 +441,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-[var(--text)]">Tipo de Solicitud</p>
-                <p className="font-semibold text-[var(--text-h)]">
+                <p className={`font-semibold text-[var(--text-h)] inline-flex items-center px-2 py-1 rounded text-xs ${typeRequestStyles[selectedDetailRequest.type_request] || 'bg-gray-100 text-gray-800'}`}>
                   {typeRequestLabels[selectedDetailRequest.type_request] || selectedDetailRequest.type_request}
                 </p>
               </div>
