@@ -13,9 +13,9 @@ const typeRequestLabels: Record<string, string> = {
 }
 
 const stateLabels: Record<string, { label: string; className: string }> = {
-  incompleta: { label: 'Incompleta', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  pendiente_compra: { label: 'Pendiente de compra', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
-  pendiente_entrega: { label: 'Pendiente de entrega', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+  incompleta: { label: 'Incompleta', className: 'bg-yellow-800 text-yellow-100 dark:bg-yellow-900 dark:text-yellow-200' },
+  pendiente_compra: { label: 'Pendiente de compra', className: 'bg-blue-800 text-blue-100 dark:bg-blue-900 dark:text-blue-200' },
+  pendiente_entrega: { label: 'Pendiente de entrega', className: 'bg-orange-800 text-orange-100 dark:bg-orange-900 dark:text-orange-200' },
 }
 
 function formatDateTime(dateString: string): string {
@@ -66,7 +66,7 @@ const RequestCard: React.FC<RequestCardProps> = ({ request, onSign, onConfirmDel
       </div>
 
       <div className="flex items-start justify-between mb-3">
-        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-800 dark:bg-primary-900 text-primary-100 dark:text-primary-200">
           {typeRequestLabels[request.type_request] || request.type_request}
         </span>
         <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${stateInfo.className}`}>
@@ -91,12 +91,12 @@ const RequestCard: React.FC<RequestCardProps> = ({ request, onSign, onConfirmDel
             {missingSignatures.applicant ? (
               <button
                 onClick={() => onSign(request, 'applicant')}
-                className="px-3 py-1.5 text-xs rounded-md border border-yellow-400 text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
+                className="px-3 py-1.5 text-xs rounded-md border border-yellow-600 text-yellow-100 bg-yellow-800 dark:bg-yellow-900 dark:border-yellow-400 dark:text-yellow-200 hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-colors"
               >
                 + Firma Solicitante
               </button>
             ) : (
-              <span className="px-2 py-1 text-xs rounded-md bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <span className="px-2 py-1 text-xs rounded-md bg-green-800 text-green-100 dark:bg-green-900 dark:text-green-200">
                 ✓ Firma Solicitante
               </span>
             )}
@@ -104,12 +104,12 @@ const RequestCard: React.FC<RequestCardProps> = ({ request, onSign, onConfirmDel
             {missingSignatures.authorization ? (
               <button
                 onClick={() => onSign(request, 'authorization')}
-                className="px-3 py-1.5 text-xs rounded-md border border-yellow-400 text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
+                className="px-3 py-1.5 text-xs rounded-md border border-yellow-600 text-yellow-100 bg-yellow-800 dark:bg-yellow-900 dark:border-yellow-400 dark:text-yellow-200 hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-colors"
               >
                 + Firma Autorización
               </button>
             ) : (
-              <span className="px-2 py-1 text-xs rounded-md bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <span className="px-2 py-1 text-xs rounded-md bg-green-800 text-green-100 dark:bg-green-900 dark:text-green-200">
                 ✓ Firma Autorización
               </span>
             )}
