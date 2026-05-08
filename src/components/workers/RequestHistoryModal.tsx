@@ -22,6 +22,13 @@ const typeRequestLabels: Record<string, string> = {
   SE_PERDIO: 'Se perdió',
 }
 
+const typeRequestStyles: Record<string, string> = {
+  PRIMERA_VEZ: 'bg-blue-600 text-white',
+  SE_ROMPIO: 'bg-red-600 text-white',
+  DESGASTE: 'bg-amber-500 text-white',
+  SE_PERDIO: 'bg-gray-600 text-white',
+}
+
 const stateLabels: Record<string, { label: string; className: string }> = {
   incompleta: { label: 'Incompleta', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
   pendiente_compra: { label: 'Pendiente de compra', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -194,7 +201,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
         onClick={() => isCompleted && handleOpenDetail(req)}
       >
         <div className="flex items-start justify-between mb-2">
-          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[var(--accent-bg)] text-[var(--accent)]">
+          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${typeRequestStyles[req.type_request] || 'bg-gray-100 text-gray-800'}`}>
             {typeRequestLabels[req.type_request] || req.type_request}
           </span>
           <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${stateInfo.className}`}>
@@ -434,7 +441,7 @@ export const RequestHistoryModal = ({ isOpen, onClose, worker }: RequestHistoryM
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-[var(--text)]">Tipo de Solicitud</p>
-                <p className="font-semibold text-[var(--text-h)]">
+                <p className={`font-semibold text-[var(--text-h)] inline-flex items-center px-2 py-1 rounded text-xs ${typeRequestStyles[selectedDetailRequest.type_request] || 'bg-gray-100 text-gray-800'}`}>
                   {typeRequestLabels[selectedDetailRequest.type_request] || selectedDetailRequest.type_request}
                 </p>
               </div>
