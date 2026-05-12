@@ -12,7 +12,7 @@ interface ReviewWizardProps {
 
 type Step = 'question' | 'state'
 
-function toGroups(asignations: ReviewAsignation[]): ReviewGroup[] {
+export function toGroups(asignations: ReviewAsignation[]): ReviewGroup[] {
   return asignations.map((a) => ({
     tool_id: a.tool_id,
     tool: a.tool,
